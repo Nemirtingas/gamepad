@@ -1141,4 +1141,47 @@ std::array<Gamepad *const, Gamepad::max_connected_gamepads>& Gamepad::get_gamepa
     return reinterpret_cast<std::array<Gamepad* const, Gamepad::max_connected_gamepads>&>(gamepads);
 }
 
-#endif//elif(linux)
+#elif defined(__APPLE__)//(linux)
+
+class Macosx_Device : public Gamepad
+{
+public:
+    Macosx_Device()
+    {}
+
+    virtual ~Macosx_Device()
+    {
+    }
+
+    virtual int GetXinputId()
+    {
+        return -1;
+    }
+
+    virtual bool RunFrame()
+    {
+        return false;
+    }
+
+    virtual bool SetVibration(uint16_t left_speed, uint16_t right_speed)
+    {
+        return false;
+    }
+
+    virtual bool SetLed(uint8_t r, uint8_t g, uint8_t b)
+    {
+        return false;
+    }
+
+    virtual bool Enabled()
+    {
+        return false;
+    }
+};
+
+std::array<Gamepad *const, Gamepad::max_connected_gamepads>& Gamepad::get_gamepads(bool redetect)
+{
+    return reinterpret_cast<std::array<Gamepad* const, Gamepad::max_connected_gamepads>&>(gamepads);
+}
+
+#endif
