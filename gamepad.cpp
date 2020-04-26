@@ -767,6 +767,40 @@ class Linux_Gamepad : public Gamepad
 
 
 public:
+    static bool is_gamepad(std::string const& path)
+    {
+        unsigned char evbit[1 + EV_CNT / 8 / sizeof(unsigned char)] = { 0 };
+        unsigned char keybit[1 + KEY_CNT / 8 / sizeof(unsigned char)] = { 0 };
+        unsigned char absbit[1 + ABS_CNT / 8 / sizeof(unsigned char)] = { 0 };
+
+        int fd = open(path.c_str(), O_RDONLY);
+        bool res = false;
+        if (fd == -1)
+            return res;
+
+        if (ioctl(fd, EVIOCGBIT(0, sizeof(evbit)), evbit) > 0 &&
+            ioctl(fd, EVIOCGBIT(EV_KEY, sizeof(keybit)), keybit) > 0 &&
+            ioctl(fd, EVIOCGBIT(EV_ABS, sizeof(absbit)), absbit) > 0)
+        {
+            if (testBit(EV_KEY, evbit) &&
+                testBit(EV_ABS, evbit) &&
+                testBit(ABS_X, absbit) &&
+                testBit(ABS_Y, absbit) &&
+                testBit(ABS_RX, absbit) &&
+                testBit(ABS_RY, absbit) &&
+                testBit(ABS_Z, absbit) &&
+                testBit(ABS_RZ, absbit) &&
+                testBit(ABS_HAT0X, absbit))
+            {
+                res = true;
+            }
+        }
+
+        close(fd);
+
+        return res;
+    }
+
     Linux_Gamepad() :
         _event_fd(-1),
         _led_fd(-1),
@@ -811,6 +845,9 @@ public:
         close_device();
 
         _device_path = std::move(device_path);
+
+        if (!is_gamepad(_device_path))
+            return false;
 
         _event_fd = open(_device_path.c_str(), O_RDWR | O_NONBLOCK);
         for (int i = 0; i < 500 && _event_fd == -1 && errno == EACCES; ++i)
@@ -1045,40 +1082,6 @@ public:
     }
 };
 
-bool is_gamepad(std::string const& path)
-{
-    unsigned char evbit[1 + EV_CNT / 8 / sizeof(unsigned char)] = { 0 };
-    unsigned char keybit[1 + KEY_CNT / 8 / sizeof(unsigned char)] = { 0 };
-    unsigned char absbit[1 + ABS_CNT / 8 / sizeof(unsigned char)] = { 0 };
-
-    int fd = open(path.c_str(), O_RDONLY);
-    bool res = false;
-    if (fd == -1)
-        return res;
-
-    if(ioctl(fd, EVIOCGBIT(0, sizeof(evbit)), evbit) > 0 &&
-       ioctl(fd, EVIOCGBIT(EV_KEY, sizeof(keybit)), keybit) > 0 &&
-       ioctl(fd, EVIOCGBIT(EV_ABS, sizeof(absbit)), absbit) > 0)
-    {
-        if(testBit(EV_KEY, evbit) &&
-           testBit(EV_ABS, evbit) &&
-           testBit(ABS_X, absbit) &&
-           testBit(ABS_Y, absbit) &&
-           testBit(ABS_RX, absbit) &&
-           testBit(ABS_RY, absbit) &&
-           testBit(ABS_Z, absbit) &&
-           testBit(ABS_RZ, absbit) &&
-           testBit(ABS_HAT0X, absbit))
-        {
-            res = true;
-        }
-    }
-
-    close(fd);
-
-    return res;
-}
-
 void find_linux_gamepads()
 {
     DIR* input_dir;
@@ -1095,7 +1098,7 @@ void find_linux_gamepads()
     
         std::string js_path("/dev/input/");
         js_path += input_dir_entry->d_name;
-        if (!is_gamepad(js_path))
+        if (!Linux_Gamepad::is_gamepad(js_path))
             continue;
 
         bool found = false;
@@ -1143,13 +1146,13 @@ std::array<Gamepad *const, Gamepad::max_connected_gamepads>& Gamepad::get_gamepa
 
 #elif defined(__APPLE__)//(linux)
 
-class Macosx_Device : public Gamepad
+class MacOSX_Device : public Gamepad
 {
 public:
-    Macosx_Device()
+    MacOSX_Device()
     {}
 
-    virtual ~Macosx_Device()
+    virtual ~MacOSX_Device()
     {
     }
 
@@ -1179,8 +1182,27 @@ public:
     }
 };
 
+void find_macosx_gamepads()
+{
+    // TODO: Detect MacOS gamepads
+}
+
 std::array<Gamepad *const, Gamepad::max_connected_gamepads>& Gamepad::get_gamepads(bool redetect)
 {
+    std::lock_guard<std::recursive_mutex> lock(gamepad_mutex);
+    static bool initialized = false;
+    if (!initialized)
+    {
+        initialized = true;
+        for (auto& gp : gamepads)
+        {
+            gp = new MacOSX_Device;
+        }
+    }
+
+    if (redetect)
+        find_macosx_gamepads();
+
     return reinterpret_cast<std::array<Gamepad* const, Gamepad::max_connected_gamepads>&>(gamepads);
 }
 
