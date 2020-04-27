@@ -890,7 +890,7 @@ public:
         _device_path(),
         _dead(false)
     {
-        for(int i = 0; i < NUM_EFFECTS; ++i)
+        for (int i = 0; i < NUM_EFFECTS; ++i)
             _effects[i].id = -1;
     }
 
@@ -982,7 +982,7 @@ public:
 
     void unregister_effect(struct ff_effect &ff)
     {
-        if(ff.id == -1 || _event_fd == -1)
+        if (ff.id == -1 || _event_fd == -1)
             return;
 
         stop_effect(ff);
@@ -997,7 +997,7 @@ public:
 
     bool play_effect(struct ff_effect &ff)
     {
-        if(ff.id == -1 || _event_fd == -1)
+        if (ff.id == -1 || _event_fd == -1)
             return false;
 
         struct input_event play;
@@ -1017,7 +1017,7 @@ public:
 
     bool stop_effect(struct ff_effect &ff)
     {
-        if(ff.id == -1 || _event_fd == -1)
+        if (ff.id == -1 || _event_fd == -1)
             return false;
 
         struct input_event play;
@@ -1144,8 +1144,8 @@ public:
         reopen_device_if_dead();
 
         if (_event_fd == -1)
-          return false;
-        
+            return false;
+
         struct ff_effect& rumble = _effects[EFFECT_INDEX(FF_RUMBLE)];
 
         if (rumble.u.rumble.strong_magnitude == left_speed &&
@@ -1160,7 +1160,7 @@ public:
             rumble.u.rumble.weak_magnitude = 0;
         }
 
-        if(left_speed == 0 && right_speed == 0)
+        if (left_speed == 0 && right_speed == 0)
             return true;
 
         rumble.type = FF_RUMBLE;
@@ -1204,7 +1204,7 @@ void find_linux_gamepads()
     {
         if (strncmp(input_dir_entry->d_name, "event", 2) != 0)
             continue;
-    
+
         std::string js_path("/dev/input/");
         js_path += input_dir_entry->d_name;
         if (!Linux_Gamepad::is_gamepad(js_path))
@@ -1216,13 +1216,13 @@ void find_linux_gamepads()
         {
             if (gamepads[i]->Enabled())
             {
-                if(dynamic_cast<Linux_Gamepad*>(gamepads[i])->device_path() == js_path)
+                if (dynamic_cast<Linux_Gamepad*>(gamepads[i])->device_path() == js_path)
                     found = true;
             }
             else
             {
                 dynamic_cast<Linux_Gamepad*>(gamepads[i])->close_device();
-                if(free_device == -1)
+                if (free_device == -1)
                     free_device = i;
             }
         }
@@ -1242,7 +1242,7 @@ std::array<Gamepad *const, Gamepad::max_connected_gamepads>& Gamepad::get_gamepa
     {
         initialized = true;
         for (auto& gp : gamepads)
-        {   
+        {
             gp = new Linux_Gamepad;
         }
     }
