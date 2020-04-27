@@ -41,6 +41,22 @@ Gamepad::Gamepad() :
 Gamepad::~Gamepad()
 {}
 
+static constexpr inline float normalize_value(float min, float max, float value)
+{
+    return (value - min) / (max - min);
+}
+
+static constexpr inline float denormalize_value(float min, float max, float value)
+{
+    return value * (max - min) + min;
+}
+
+static constexpr inline float rerange_value(float src_min, float src_max, float dst_min, float dst_max, float value)
+{
+    return denormalize_value(dst_min, dst_max,
+        normalize_value(src_min, src_max, value));
+}
+
 const std::map<gamepad_id_t, gamepad_type_t, gamepad_id_less_t> Gamepad::gamepads_ids = {
     {{0x0079, 0x18d4}, {gamepad_type_t::type_e::Xbox360, "GPD Win 2 X-Box Controller"}},
     {{0x044f, 0xb326}, {gamepad_type_t::type_e::Xbox360, "Thrustmaster Gamepad GP XID"}},
@@ -294,23 +310,52 @@ const std::map<gamepad_id_t, gamepad_type_t, gamepad_id_less_t> Gamepad::gamepad
 #define XINPUT_GAMEPAD_X                0x4000
 #define XINPUT_GAMEPAD_Y                0x8000
 
-DEFINE_GUID(GUID_DEVINTERFACE_XINPUT, 0xEC87F1E3, 0xC13B, 0x4100, 0xB5, 0xF7, 0x8B, 0x84, 0xD5, 0x42, 0x60, 0xCB);
+DEFINE_GUID(XUSB_INTERFACE_CLASS_GUID, 0xEC87F1E3, 0xC13B, 0x4100, 0xB5, 0xF7, 0x8B, 0x84, 0xD5, 0x42, 0x60, 0xCB);
 
 #define IOCTL_XINPUT_BASE  0x8000
 
-#define XINPUT_READ_ACCESS  ( 0x0001 )
-#define XINPUT_WRITE_ACCESS ( 0x0002 )
+#define XINPUT_READ_ACCESS  ( FILE_READ_ACCESS )
+#define XINPUT_WRITE_ACCESS ( FILE_WRITE_ACCESS )
 #define XINPUT_RW_ACCESS    ( (XINPUT_READ_ACCESS) | (XINPUT_WRITE_ACCESS) )
 
-#define IOCTL_XINPUT_INIT             CTL_CODE(IOCTL_XINPUT_BASE, 0x800, 0x00, XINPUT_READ_ACCESS)
-#define IOCTL_XINPUT_GET_CAPABILITIES CTL_CODE(IOCTL_XINPUT_BASE, 0x800, 0x04, XINPUT_RW_ACCESS)
-#define IOCTL_XINPUT_8                CTL_CODE(IOCTL_XINPUT_BASE, 0x800, 0x08, XINPUT_RW_ACCESS)
-#define IOCTL_XINPUT_GET_DATA         CTL_CODE(IOCTL_XINPUT_BASE, 0x800, 0x0C, XINPUT_RW_ACCESS)
-#define IOCTL_XINPUT_SET_DATA         CTL_CODE(IOCTL_XINPUT_BASE, 0x800, 0x10, XINPUT_WRITE_ACCESS)
-#define IOCTL_XINPUT_20               CTL_CODE(IOCTL_XINPUT_BASE, 0x800, 0x14, XINPUT_WRITE_ACCESS)
-#define IOCTL_XINPUT_GET_BATTERY_INFO CTL_CODE(IOCTL_XINPUT_BASE, 0x800, 0x18, XINPUT_RW_ACCESS)
-#define IOCTL_XINPUT_28               CTL_CODE(IOCTL_XINPUT_BASE, 0x800, 0x1C, XINPUT_WRITE_ACCESS)
-#define IOCTL_XINPUT_32               CTL_CODE(IOCTL_XINPUT_BASE, 0x800, 0x20, XINPUT_RW_ACCESS)
+#define IOCTL_XINPUT_GET_INFORMATION         CTL_CODE(IOCTL_XINPUT_BASE, 0x800, 0x00, XINPUT_READ_ACCESS)  // 0x80006000
+#define IOCTL_XINPUT_GET_CAPABILITIES        CTL_CODE(IOCTL_XINPUT_BASE, 0x800, 0x04, XINPUT_RW_ACCESS)    // 0x8000E004
+#define IOCTL_XINPUT_GET_LED_STATE           CTL_CODE(IOCTL_XINPUT_BASE, 0x800, 0x08, XINPUT_RW_ACCESS)    // 0x8000E008
+#define IOCTL_XINPUT_GET_GAMEPAD_STATE       CTL_CODE(IOCTL_XINPUT_BASE, 0x800, 0x0C, XINPUT_RW_ACCESS)    // 0x8000E00C
+#define IOCTL_XINPUT_SET_GAMEPAD_STATE       CTL_CODE(IOCTL_XINPUT_BASE, 0x800, 0x10, XINPUT_WRITE_ACCESS) // 0x8000A010
+#define IOCTL_XINPUT_WAIT_FOR_GUIDE_BUTTON   CTL_CODE(IOCTL_XINPUT_BASE, 0x800, 0x14, XINPUT_WRITE_ACCESS) // 0x8000A014
+#define IOCTL_XINPUT_GET_BATTERY_INFORMATION CTL_CODE(IOCTL_XINPUT_BASE, 0x800, 0x18, XINPUT_RW_ACCESS)    // 0x8000E018
+#define IOCTL_XINPUT_POWER_DOWN_DEVICE       CTL_CODE(IOCTL_XINPUT_BASE, 0x800, 0x1C, XINPUT_WRITE_ACCESS) // 0x8000A010
+#define IOCTL_XINPUT_GET_AUDIO_INFORMATION   CTL_CODE(IOCTL_XINPUT_BASE, 0x800, 0x20, XINPUT_RW_ACCESS)    // 0x8000E020
+
+#define XINPUT_LED_OFF            ((BYTE)0)
+#define XINPUT_LED_BLINK          ((BYTE)1)
+#define XINPUT_LED_1_SWITCH_BLINK ((BYTE)2)
+#define XINPUT_LED_2_SWITCH_BLINK ((BYTE)3)
+#define XINPUT_LED_3_SWITCH_BLINK ((BYTE)4)
+#define XINPUT_LED_4_SWITCH_BLINK ((BYTE)5)
+#define XINPUT_LED_1              ((BYTE)6)
+#define XINPUT_LED_2              ((BYTE)7)
+#define XINPUT_LED_3              ((BYTE)8)
+#define XINPUT_LED_4              ((BYTE)9)
+#define XINPUT_LED_CYCLE          ((BYTE)10)
+#define XINPUT_LED_FAST_BLINK     ((BYTE)11)
+#define XINPUT_LED_SLOW_BLINK     ((BYTE)12)
+#define XINPUT_LED_FLIPFLOP       ((BYTE)13)
+#define XINPUT_LED_ALLBLINK       ((BYTE)14)
+static BYTE XINPUT_PORT_TO_LED_MAP[] =
+{
+    XINPUT_LED_1,
+    XINPUT_LED_2,
+    XINPUT_LED_3,
+    XINPUT_LED_4,
+};
+#define MAX_XINPUT_PORT_TO_LED_MAP (sizeof(XINPUT_PORT_TO_LED_MAP)/sizeof(*XINPUT_PORT_TO_LED_MAP))
+
+static BYTE XINPUT_LED_TO_PORT_MAP[] =
+{
+    0xFF, 0xFF, 0, 1, 2, 3, 0, 1, 2, 3, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0
+};
 
 #pragma pack(push, 1)
 struct buff_in_t
@@ -388,9 +433,9 @@ class XInput_Device : public Gamepad
             return ERROR_SUCCESS;
 
         if (GetLastError() == ERROR_IO_PENDING && pOverlapped)
-            result = 0x8000000A;
+            result = E_PENDING;
         else
-            result = 0x80004005;
+            result = E_FAIL;
         return result;
     }
 
@@ -412,11 +457,11 @@ class XInput_Device : public Gamepad
     template<typename T>
     bool parse_buffer(T &buff)
     {
-        left_stick.x = buff.sThumbLX / (buff.sThumbLX > 0 ? 32767.0f : 32768.0f);
-        left_stick.y = buff.sThumbLY / (buff.sThumbLY > 0 ? 32767.0f : 32768.0f);
+        left_stick.x = rerange_value(-32768.0f, 32767.0f, -1.0f, 1.0f, buff.sThumbLX);
+        left_stick.y = rerange_value(-32768.0f, 32767.0f, -1.0f, 1.0f, buff.sThumbLY);
 
-        right_stick.x = buff.sThumbRX / (buff.sThumbRX > 0 ? 32767.0f : 32768.0f);
-        right_stick.y = buff.sThumbRY / (buff.sThumbRY > 0 ? 32767.0f : 32768.0f);
+        right_stick.x = rerange_value(-32768.0f, 32767.0f, -1.0f, 1.0f, buff.sThumbRX);
+        right_stick.y = rerange_value(-32768.0f, 32767.0f, -1.0f, 1.0f, buff.sThumbRY);
 
         up    = buff.wButtons & XINPUT_GAMEPAD_DPAD_UP;
         down  = buff.wButtons & XINPUT_GAMEPAD_DPAD_DOWN;
@@ -439,8 +484,8 @@ class XInput_Device : public Gamepad
         x = buff.wButtons & XINPUT_GAMEPAD_X;
         y = buff.wButtons & XINPUT_GAMEPAD_Y;
 
-        left_trigger  = buff.bLeftTrigger / 255.0f;
-        right_trigger = buff.bRightTrigger / 255.0f;
+        left_trigger = rerange_value(0.0f, 255.0f, 0.0f, 1.0f, buff.bLeftTrigger);
+        right_trigger = rerange_value(0.0f, 255.0f, 0.0f, 1.0f, buff.bRightTrigger);
 
         return buff.status == 1;
     }
@@ -448,7 +493,7 @@ class XInput_Device : public Gamepad
     bool get_gamepad_infos()
     {
         WORD buffer[6] = { 0 };
-        bool success = (DeviceInIo(IOCTL_XINPUT_INIT, buffer, sizeof(buffer)) >= 0 ? true : false);
+        bool success = (DeviceInIo(IOCTL_XINPUT_GET_INFORMATION, buffer, sizeof(buffer)) >= 0 ? true : false);
         if (success)
         {
             if (!(buffer[2] & 0x80))
@@ -460,19 +505,15 @@ class XInput_Device : public Gamepad
                     id.vendorID = buffer[4];
                     id.productID = buffer[5];
 
-                    {
-                        char buff[5] = { 0 };
-                        
-                        //memset(buff, 0, sizeof(buff));
-                        //buff[0] = 0;
-                        buff[1] = 13;
-                        buff[4] = 1;
+                    {// This part might not be needed
+                        char buff[5] = {
+                            0,              // XInput User Index
+                            XINPUT_LED_OFF, // LED Status
+                            0,
+                            0,
+                            1 };
 
-                        // led ?
-                        //BYTE byte_40152C[XUSER_MAX_COUNT] = { 6, 7, 8, 9 };
-                        //buff[1] = byte_40152C[v7 % XUSER_MAX_COUNT]
-
-                        DeviceOutIo(IOCTL_XINPUT_SET_DATA, buff, sizeof(buff));
+                        DeviceOutIo(IOCTL_XINPUT_SET_GAMEPAD_STATE, buff, sizeof(buff));
                     }
                 }
             }
@@ -494,7 +535,7 @@ class XInput_Device : public Gamepad
             uint8_t xbonOneInBuff;
         } in_buff;
 
-        
+
         DWORD inBuffSize;
         DWORD outBuffSize;
         unsigned int res;
@@ -516,7 +557,7 @@ class XInput_Device : public Gamepad
             outBuffSize = sizeof(out_buff.xboxOutBuff);
         }
 
-        res = DeviceInOutIo(IOCTL_XINPUT_GET_DATA, &in_buff, inBuffSize, &out_buff, outBuffSize);
+        res = DeviceInOutIo(IOCTL_XINPUT_GET_GAMEPAD_STATE, &in_buff, inBuffSize, &out_buff, outBuffSize);
         if (res < 0)
             return false;
 
@@ -531,14 +572,15 @@ class XInput_Device : public Gamepad
 
     bool send_gamepad_vibration(uint16_t left_speed, uint16_t right_speed)
     {
-        uint8_t buff[5] = { 0 };
+        uint8_t buff[5] = {
+            0,
+            0,
+            left_speed / 256,
+            right_speed / 256,
+            2
+        };
 
-        buff[0] = 0;
-        buff[2] = left_speed / 256;
-        buff[3] = right_speed / 256;
-        buff[4] = 2;
-
-        return DeviceOutIo(IOCTL_XINPUT_SET_DATA, buff, sizeof(buff)) == ERROR_SUCCESS;
+        return DeviceOutIo(IOCTL_XINPUT_SET_GAMEPAD_STATE, buff, sizeof(buff)) == ERROR_SUCCESS;
     }
 
 public:
@@ -614,7 +656,7 @@ public:
 
         if (_hDevice == INVALID_HANDLE_VALUE)
             return false;
-        
+
         if (send_gamepad_vibration(left_speed, right_speed))
             return true;
 
@@ -647,7 +689,7 @@ void find_xinput_gamepads()
     DWORD detail_size = MAX_PATH * sizeof(WCHAR);
     DWORD idx;
 
-    device_info_set = SetupDiGetClassDevsW(&GUID_DEVINTERFACE_XINPUT, NULL, NULL, DIGCF_DEVICEINTERFACE | DIGCF_PRESENT);
+    device_info_set = SetupDiGetClassDevsW(&XUSB_INTERFACE_CLASS_GUID, NULL, NULL, DIGCF_DEVICEINTERFACE | DIGCF_PRESENT);
 
     data = (SP_DEVICE_INTERFACE_DETAIL_DATA_W*)HeapAlloc(GetProcessHeap(), 0, sizeof(*data) + detail_size);
     data->cbSize = sizeof(*data);
@@ -656,7 +698,7 @@ void find_xinput_gamepads()
     interface_data.cbSize = sizeof(interface_data);
 
     idx = 0;
-    while (SetupDiEnumDeviceInterfaces(device_info_set, NULL, &GUID_DEVINTERFACE_XINPUT, idx++, &interface_data))
+    while (SetupDiEnumDeviceInterfaces(device_info_set, NULL, &XUSB_INTERFACE_CLASS_GUID, idx++, &interface_data))
     {
         if (!SetupDiGetDeviceInterfaceDetailW(device_info_set,
             &interface_data, data, sizeof(*data) + detail_size, NULL, NULL))
@@ -668,13 +710,13 @@ void find_xinput_gamepads()
         {
             if (gamepads[i]->Enabled())
             {
-                if(dynamic_cast<XInput_Device*>(gamepads[i])->device_path() == data->DevicePath)
+                if (dynamic_cast<XInput_Device*>(gamepads[i])->device_path() == data->DevicePath)
                     found = true;
             }
             else
             {
                 dynamic_cast<XInput_Device*>(gamepads[i])->close_device();
-                if(free_device == -1)
+                if (free_device == -1)
                     free_device = i;
             }
         }
@@ -743,6 +785,9 @@ class Linux_Gamepad : public Gamepad
     std::string _device_path;
     bool _dead;
 
+    float _axis_min[ABS_MAX];
+    float _axis_max[ABS_MAX];
+
     struct ff_effect _effects[NUM_EFFECTS];
 
     void get_gamepad_infos()
@@ -752,6 +797,44 @@ class Linux_Gamepad : public Gamepad
 
         id.productID = inpid.product;
         id.vendorID = inpid.vendor;
+
+        struct input_absinfo absinfo;
+
+        for (auto& axis : { ABS_X, ABS_Y, ABS_RX, ABS_RY, ABS_Z, ABS_RZ })
+        {
+            if (ioctl(_event_fd, EVIOCGABS(axis), &absinfo) >= 0)
+            {
+                if (axis == ABS_Y || axis == ABS_RY)
+                {
+                    // On Y, down is positiv, up is negativ, so swap the values
+                    std::swap(absinfo.minimum, absinfo.maximum);
+                }
+
+                _axis_min[axis] = absinfo.minimum;
+                _axis_max[axis] = absinfo.maximum;
+                //std::cout << "axis: " << axis << ":" << std::endl
+                //          << "min : " << _axis_min[axis] << std::endl
+                //          << "max : " << _axis_max[axis] << std::endl;
+            }
+            else // Failed to retrieve infos, device did not inform the OS of the ranges ?
+            {// Set some common values
+                switch (axis)
+                {
+                case ABS_X: case ABS_RX:
+                    _axis_min[axis] = -32768.0f;
+                    _axis_max[axis] = 32767.0f;
+                    break;
+                case ABS_Y: case ABS_RY:
+                    _axis_min[axis] = 32767.0f;
+                    _axis_max[axis] = -32768.0f;
+                    break;
+                case ABS_Z: case ABS_RZ:
+                    _axis_min[axis] = 0.0f;
+                    _axis_max[axis] = 255.0f;
+                    break;
+                }
+            }
+        }
 
         //std::cout << std::hex << id.vendorID << ' ' << id.productID << std::dec << std::endl;
     }
@@ -807,7 +890,7 @@ public:
         _device_path(),
         _dead(false)
     {
-        for(int i = 0; i < NUM_EFFECTS; ++i)
+        for (int i = 0; i < NUM_EFFECTS; ++i)
             _effects[i].id = -1;
     }
 
@@ -899,7 +982,7 @@ public:
 
     void unregister_effect(struct ff_effect &ff)
     {
-        if(ff.id == -1 || _event_fd == -1)
+        if (ff.id == -1 || _event_fd == -1)
             return;
 
         stop_effect(ff);
@@ -914,7 +997,7 @@ public:
 
     bool play_effect(struct ff_effect &ff)
     {
-        if(ff.id == -1 || _event_fd == -1)
+        if (ff.id == -1 || _event_fd == -1)
             return false;
 
         struct input_event play;
@@ -934,7 +1017,7 @@ public:
 
     bool stop_effect(struct ff_effect &ff)
     {
-        if(ff.id == -1 || _event_fd == -1)
+        if (ff.id == -1 || _event_fd == -1)
             return false;
 
         struct input_event play;
@@ -974,49 +1057,75 @@ public:
             num_events /= sizeof(*events);
             for (int i = 0; i < num_events; ++i)
             {
+                auto const& event_code  = events[i].code;
+                auto const& event_value = events[i].value;
                 switch (events[i].type)
                 {
                     case EV_KEY:
-                        switch (events[i].code)
+                        switch (event_code)
                         {
-                            case BTN_A: a = events[i].value; break;
-                            case BTN_B: b = events[i].value; break;
-                            case BTN_X: x = events[i].value; break;
-                            case BTN_Y: y = events[i].value; break;
-                            case BTN_TL: left_shoulder = events[i].value; break;
-                            case BTN_TR: right_shoulder = events[i].value; break;
-                            case BTN_SELECT: back = events[i].value; break;
-                            case BTN_START: start = events[i].value; break;
-                            case BTN_THUMBL: left_thumb = events[i].value; break;
-                            case BTN_THUMBR: right_thumb = events[i].value; break;
-                            case BTN_MODE: guide = events[i].value; break;
+                            case BTN_A     : a              = event_value; break;
+                            case BTN_B     : b              = event_value; break;
+                            case BTN_X     : x              = event_value; break;
+                            case BTN_Y     : y              = event_value; break;
+                            case BTN_TL    : left_shoulder  = event_value; break;
+                            case BTN_TR    : right_shoulder = event_value; break;
+                            case BTN_SELECT: back           = event_value; break;
+                            case BTN_START : start          = event_value; break;
+                            case BTN_THUMBL: left_thumb     = event_value; break;
+                            case BTN_THUMBR: right_thumb    = event_value; break;
+                            case BTN_MODE  : guide          = event_value; break;
                         }
-                    break;
+                        break;
 
                     case EV_ABS:
-                        switch (events[i].code)
+                        switch (event_code)
                         {
-                            case ABS_X: left_stick.x = events[i].value / (events[i].value > 0 ? 32767.0f : 32768.0f); break;
-                            case ABS_Y: left_stick.y = events[i].value / (events[i].value > 0 ? -32767.0f : -32768.0f); break;
-                            case ABS_RX: right_stick.x = events[i].value / (events[i].value > 0 ? 32767.0f : 32768.0f); break;
-                            case ABS_RY: right_stick.y = events[i].value / (events[i].value > 0 ? -32767.0f : -32768.0f); break;
-                            case ABS_Z: left_trigger = events[i].value / 255.0f; break;
-                            case ABS_RZ: right_trigger = events[i].value / 255.0f; break;
+                            case ABS_X:
+                                left_stick.x  = rerange_value(_axis_min[event_code],
+                                                              _axis_max[event_code],
+                                                              -1.0f, 1.0f, event_value);
+                                break;
+                            case ABS_Y:
+                                left_stick.y  = rerange_value(_axis_min[event_code],
+                                                              _axis_max[event_code],
+                                                              -1.0f, 1.0f, event_value);
+                                break;
+                            case ABS_RX:
+                                right_stick.x = rerange_value(_axis_min[event_code],
+                                                              _axis_max[event_code],
+                                                              -1.0f, 1.0f, event_value);
+                                break;
+                            case ABS_RY:
+                                right_stick.y = rerange_value(_axis_min[event_code],
+                                                              _axis_max[event_code],
+                                                              -1.0f, 1.0f, event_value);
+                                break;
+                            case ABS_Z:
+                                left_trigger  = rerange_value(_axis_min[event_code],
+                                                              _axis_max[event_code],
+                                                              0.0f, 1.0f, event_value);
+                                break;
+                            case ABS_RZ:
+                                right_trigger = rerange_value(_axis_min[event_code],
+                                                              _axis_max[event_code],
+                                                              0.0f, 1.0f, event_value);
+                                break;
                             case ABS_HAT0X:
-                                if (events[i].value == 0)
+                                if (event_value == 0)
                                     left = right = false;
                                 else
-                                    left = !(right = events[i].value == 1);
-                            break;
+                                    left = !(right = event_value == 1);
+                                break;
                             case ABS_HAT0Y:
-                                if (events[i].value == 0)
+                                if (event_value == 0)
                                     up = down = false;
                                 else
-                                    up = !(down = events[i].value == 1);
-                            break;
+                                    up = !(down = event_value == 1);
+                                break;
                         }
-                    break;
-                }
+                        break;
+                    }
             }
         }
 
@@ -1035,8 +1144,8 @@ public:
         reopen_device_if_dead();
 
         if (_event_fd == -1)
-          return false;
-        
+            return false;
+
         struct ff_effect& rumble = _effects[EFFECT_INDEX(FF_RUMBLE)];
 
         if (rumble.u.rumble.strong_magnitude == left_speed &&
@@ -1051,7 +1160,7 @@ public:
             rumble.u.rumble.weak_magnitude = 0;
         }
 
-        if(left_speed == 0 && right_speed == 0)
+        if (left_speed == 0 && right_speed == 0)
             return true;
 
         rumble.type = FF_RUMBLE;
@@ -1095,7 +1204,7 @@ void find_linux_gamepads()
     {
         if (strncmp(input_dir_entry->d_name, "event", 2) != 0)
             continue;
-    
+
         std::string js_path("/dev/input/");
         js_path += input_dir_entry->d_name;
         if (!Linux_Gamepad::is_gamepad(js_path))
@@ -1107,13 +1216,13 @@ void find_linux_gamepads()
         {
             if (gamepads[i]->Enabled())
             {
-                if(dynamic_cast<Linux_Gamepad*>(gamepads[i])->device_path() == js_path)
+                if (dynamic_cast<Linux_Gamepad*>(gamepads[i])->device_path() == js_path)
                     found = true;
             }
             else
             {
                 dynamic_cast<Linux_Gamepad*>(gamepads[i])->close_device();
-                if(free_device == -1)
+                if (free_device == -1)
                     free_device = i;
             }
         }
@@ -1133,7 +1242,7 @@ std::array<Gamepad *const, Gamepad::max_connected_gamepads>& Gamepad::get_gamepa
     {
         initialized = true;
         for (auto& gp : gamepads)
-        {   
+        {
             gp = new Linux_Gamepad;
         }
     }
