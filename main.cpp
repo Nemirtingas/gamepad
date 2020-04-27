@@ -7,21 +7,10 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-  vector<shared_ptr<Gamepad>> gamepads = Gamepad::get_gamepads();
-
-  cout << gamepads.size() << endl;
-
-  for(auto &gp : gamepads)
-    gp->vibration(30000,30000);
-
-  sleep(3);
-
-  for(auto &gp : gamepads)
-    gp->vibration(0,0);
-
-  while(!gamepads.empty())
+  while(1)
   {
     int i = 0;
+    auto gamepads = Gamepad::get_gamepads(true);
     for(auto& gp : gamepads)
     {
       if(gp->RunFrame())
