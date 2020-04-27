@@ -294,23 +294,52 @@ const std::map<gamepad_id_t, gamepad_type_t, gamepad_id_less_t> Gamepad::gamepad
 #define XINPUT_GAMEPAD_X                0x4000
 #define XINPUT_GAMEPAD_Y                0x8000
 
-DEFINE_GUID(GUID_DEVINTERFACE_XINPUT, 0xEC87F1E3, 0xC13B, 0x4100, 0xB5, 0xF7, 0x8B, 0x84, 0xD5, 0x42, 0x60, 0xCB);
+DEFINE_GUID(XUSB_INTERFACE_CLASS_GUID, 0xEC87F1E3, 0xC13B, 0x4100, 0xB5, 0xF7, 0x8B, 0x84, 0xD5, 0x42, 0x60, 0xCB);
 
 #define IOCTL_XINPUT_BASE  0x8000
 
-#define XINPUT_READ_ACCESS  ( 0x0001 )
-#define XINPUT_WRITE_ACCESS ( 0x0002 )
+#define XINPUT_READ_ACCESS  ( FILE_READ_ACCESS )
+#define XINPUT_WRITE_ACCESS ( FILE_WRITE_ACCESS )
 #define XINPUT_RW_ACCESS    ( (XINPUT_READ_ACCESS) | (XINPUT_WRITE_ACCESS) )
 
-#define IOCTL_XINPUT_INIT             CTL_CODE(IOCTL_XINPUT_BASE, 0x800, 0x00, XINPUT_READ_ACCESS)
-#define IOCTL_XINPUT_GET_CAPABILITIES CTL_CODE(IOCTL_XINPUT_BASE, 0x800, 0x04, XINPUT_RW_ACCESS)
-#define IOCTL_XINPUT_8                CTL_CODE(IOCTL_XINPUT_BASE, 0x800, 0x08, XINPUT_RW_ACCESS)
-#define IOCTL_XINPUT_GET_DATA         CTL_CODE(IOCTL_XINPUT_BASE, 0x800, 0x0C, XINPUT_RW_ACCESS)
-#define IOCTL_XINPUT_SET_DATA         CTL_CODE(IOCTL_XINPUT_BASE, 0x800, 0x10, XINPUT_WRITE_ACCESS)
-#define IOCTL_XINPUT_20               CTL_CODE(IOCTL_XINPUT_BASE, 0x800, 0x14, XINPUT_WRITE_ACCESS)
-#define IOCTL_XINPUT_GET_BATTERY_INFO CTL_CODE(IOCTL_XINPUT_BASE, 0x800, 0x18, XINPUT_RW_ACCESS)
-#define IOCTL_XINPUT_28               CTL_CODE(IOCTL_XINPUT_BASE, 0x800, 0x1C, XINPUT_WRITE_ACCESS)
-#define IOCTL_XINPUT_32               CTL_CODE(IOCTL_XINPUT_BASE, 0x800, 0x20, XINPUT_RW_ACCESS)
+#define IOCTL_XINPUT_GET_INFORMATION         CTL_CODE(IOCTL_XINPUT_BASE, 0x800, 0x00, XINPUT_READ_ACCESS)  // 0x80006000
+#define IOCTL_XINPUT_GET_CAPABILITIES        CTL_CODE(IOCTL_XINPUT_BASE, 0x800, 0x04, XINPUT_RW_ACCESS)    // 0x8000E004
+#define IOCTL_XINPUT_GET_LED_STATE           CTL_CODE(IOCTL_XINPUT_BASE, 0x800, 0x08, XINPUT_RW_ACCESS)    // 0x8000E008
+#define IOCTL_XINPUT_GET_GAMEPAD_STATE       CTL_CODE(IOCTL_XINPUT_BASE, 0x800, 0x0C, XINPUT_RW_ACCESS)    // 0x8000E00C
+#define IOCTL_XINPUT_SET_GAMEPAD_STATE       CTL_CODE(IOCTL_XINPUT_BASE, 0x800, 0x10, XINPUT_WRITE_ACCESS) // 0x8000A010
+#define IOCTL_XINPUT_WAIT_FOR_GUIDE_BUTTON   CTL_CODE(IOCTL_XINPUT_BASE, 0x800, 0x14, XINPUT_WRITE_ACCESS) // 0x8000A014
+#define IOCTL_XINPUT_GET_BATTERY_INFORMATION CTL_CODE(IOCTL_XINPUT_BASE, 0x800, 0x18, XINPUT_RW_ACCESS)    // 0x8000E018
+#define IOCTL_XINPUT_POWER_DOWN_DEVICE       CTL_CODE(IOCTL_XINPUT_BASE, 0x800, 0x1C, XINPUT_WRITE_ACCESS) // 0x8000A010
+#define IOCTL_XINPUT_GET_AUDIO_INFORMATION   CTL_CODE(IOCTL_XINPUT_BASE, 0x800, 0x20, XINPUT_RW_ACCESS)    // 0x8000E020
+
+#define XINPUT_LED_OFF            ((BYTE)0)
+#define XINPUT_LED_BLINK          ((BYTE)1)
+#define XINPUT_LED_1_SWITCH_BLINK ((BYTE)2)
+#define XINPUT_LED_2_SWITCH_BLINK ((BYTE)3)
+#define XINPUT_LED_3_SWITCH_BLINK ((BYTE)4)
+#define XINPUT_LED_4_SWITCH_BLINK ((BYTE)5)
+#define XINPUT_LED_1              ((BYTE)6)
+#define XINPUT_LED_2              ((BYTE)7)
+#define XINPUT_LED_3              ((BYTE)8)
+#define XINPUT_LED_4              ((BYTE)9)
+#define XINPUT_LED_CYCLE          ((BYTE)10)
+#define XINPUT_LED_FAST_BLINK     ((BYTE)11)
+#define XINPUT_LED_SLOW_BLINK     ((BYTE)12)
+#define XINPUT_LED_FLIPFLOP       ((BYTE)13)
+#define XINPUT_LED_ALLBLINK       ((BYTE)14)
+static BYTE XINPUT_PORT_TO_LED_MAP[] =
+{
+    XINPUT_LED_1,
+    XINPUT_LED_2,
+    XINPUT_LED_3,
+    XINPUT_LED_4,
+};
+#define MAX_XINPUT_PORT_TO_LED_MAP (sizeof(XINPUT_PORT_TO_LED_MAP)/sizeof(*XINPUT_PORT_TO_LED_MAP))
+
+static BYTE XINPUT_LED_TO_PORT_MAP[] =
+{
+    0xFF, 0xFF, 0, 1, 2, 3, 0, 1, 2, 3, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0
+};
 
 #pragma pack(push, 1)
 struct buff_in_t
@@ -388,9 +417,9 @@ class XInput_Device : public Gamepad
             return ERROR_SUCCESS;
 
         if (GetLastError() == ERROR_IO_PENDING && pOverlapped)
-            result = 0x8000000A;
+            result = E_PENDING;
         else
-            result = 0x80004005;
+            result = E_FAIL;
         return result;
     }
 
@@ -448,7 +477,7 @@ class XInput_Device : public Gamepad
     bool get_gamepad_infos()
     {
         WORD buffer[6] = { 0 };
-        bool success = (DeviceInIo(IOCTL_XINPUT_INIT, buffer, sizeof(buffer)) >= 0 ? true : false);
+        bool success = (DeviceInIo(IOCTL_XINPUT_GET_INFORMATION, buffer, sizeof(buffer)) >= 0 ? true : false);
         if (success)
         {
             if (!(buffer[2] & 0x80))
@@ -460,19 +489,15 @@ class XInput_Device : public Gamepad
                     id.vendorID = buffer[4];
                     id.productID = buffer[5];
 
-                    {
-                        char buff[5] = { 0 };
-                        
-                        //memset(buff, 0, sizeof(buff));
-                        //buff[0] = 0;
-                        buff[1] = 13;
-                        buff[4] = 1;
+                    {// This part might not be needed
+                        char buff[5] = {
+                            0,              // XInput User Index
+                            XINPUT_LED_OFF, // LED Status
+                            0,
+                            0,
+                            1 };
 
-                        // led ?
-                        //BYTE byte_40152C[XUSER_MAX_COUNT] = { 6, 7, 8, 9 };
-                        //buff[1] = byte_40152C[v7 % XUSER_MAX_COUNT]
-
-                        DeviceOutIo(IOCTL_XINPUT_SET_DATA, buff, sizeof(buff));
+                        DeviceOutIo(IOCTL_XINPUT_SET_GAMEPAD_STATE, buff, sizeof(buff));
                     }
                 }
             }
@@ -494,7 +519,7 @@ class XInput_Device : public Gamepad
             uint8_t xbonOneInBuff;
         } in_buff;
 
-        
+
         DWORD inBuffSize;
         DWORD outBuffSize;
         unsigned int res;
@@ -516,7 +541,7 @@ class XInput_Device : public Gamepad
             outBuffSize = sizeof(out_buff.xboxOutBuff);
         }
 
-        res = DeviceInOutIo(IOCTL_XINPUT_GET_DATA, &in_buff, inBuffSize, &out_buff, outBuffSize);
+        res = DeviceInOutIo(IOCTL_XINPUT_GET_GAMEPAD_STATE, &in_buff, inBuffSize, &out_buff, outBuffSize);
         if (res < 0)
             return false;
 
@@ -531,14 +556,15 @@ class XInput_Device : public Gamepad
 
     bool send_gamepad_vibration(uint16_t left_speed, uint16_t right_speed)
     {
-        uint8_t buff[5] = { 0 };
+        uint8_t buff[5] = {
+            0,
+            0,
+            left_speed / 256,
+            right_speed / 256,
+            2
+        };
 
-        buff[0] = 0;
-        buff[2] = left_speed / 256;
-        buff[3] = right_speed / 256;
-        buff[4] = 2;
-
-        return DeviceOutIo(IOCTL_XINPUT_SET_DATA, buff, sizeof(buff)) == ERROR_SUCCESS;
+        return DeviceOutIo(IOCTL_XINPUT_SET_GAMEPAD_STATE, buff, sizeof(buff)) == ERROR_SUCCESS;
     }
 
 public:
@@ -614,7 +640,7 @@ public:
 
         if (_hDevice == INVALID_HANDLE_VALUE)
             return false;
-        
+
         if (send_gamepad_vibration(left_speed, right_speed))
             return true;
 
@@ -647,7 +673,7 @@ void find_xinput_gamepads()
     DWORD detail_size = MAX_PATH * sizeof(WCHAR);
     DWORD idx;
 
-    device_info_set = SetupDiGetClassDevsW(&GUID_DEVINTERFACE_XINPUT, NULL, NULL, DIGCF_DEVICEINTERFACE | DIGCF_PRESENT);
+    device_info_set = SetupDiGetClassDevsW(&XUSB_INTERFACE_CLASS_GUID, NULL, NULL, DIGCF_DEVICEINTERFACE | DIGCF_PRESENT);
 
     data = (SP_DEVICE_INTERFACE_DETAIL_DATA_W*)HeapAlloc(GetProcessHeap(), 0, sizeof(*data) + detail_size);
     data->cbSize = sizeof(*data);
@@ -656,7 +682,7 @@ void find_xinput_gamepads()
     interface_data.cbSize = sizeof(interface_data);
 
     idx = 0;
-    while (SetupDiEnumDeviceInterfaces(device_info_set, NULL, &GUID_DEVINTERFACE_XINPUT, idx++, &interface_data))
+    while (SetupDiEnumDeviceInterfaces(device_info_set, NULL, &XUSB_INTERFACE_CLASS_GUID, idx++, &interface_data))
     {
         if (!SetupDiGetDeviceInterfaceDetailW(device_info_set,
             &interface_data, data, sizeof(*data) + detail_size, NULL, NULL))
@@ -668,13 +694,13 @@ void find_xinput_gamepads()
         {
             if (gamepads[i]->Enabled())
             {
-                if(dynamic_cast<XInput_Device*>(gamepads[i])->device_path() == data->DevicePath)
+                if (dynamic_cast<XInput_Device*>(gamepads[i])->device_path() == data->DevicePath)
                     found = true;
             }
             else
             {
                 dynamic_cast<XInput_Device*>(gamepads[i])->close_device();
-                if(free_device == -1)
+                if (free_device == -1)
                     free_device = i;
             }
         }
