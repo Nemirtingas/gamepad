@@ -65,21 +65,21 @@ public:
 
     gamepad_id_t id;
 
-    bool  up;
-    bool  down;
-    bool  left;
-    bool  right;
-    bool  start;
-    bool  back;
-    bool  left_shoulder;
-    bool  right_shoulder;
-    bool  left_thumb;
-    bool  right_thumb;
-    bool  a;
-    bool  b;
-    bool  x;
-    bool  y;
-    bool guide;
+    bool  up            : 1;
+    bool  down          : 1;
+    bool  left          : 1;
+    bool  right         : 1;
+    bool  start         : 1;
+    bool  back          : 1;
+    bool  left_shoulder : 1;
+    bool  right_shoulder: 1;
+    bool  left_thumb    : 1;
+    bool  right_thumb   : 1;
+    bool  a             : 1;
+    bool  b             : 1;
+    bool  x             : 1;
+    bool  y             : 1;
+    bool guide          : 1;
     stick_pos_t left_stick;
     stick_pos_t right_stick;
     float left_trigger;
