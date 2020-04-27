@@ -41,6 +41,22 @@ Gamepad::Gamepad() :
 Gamepad::~Gamepad()
 {}
 
+static constexpr inline float normalize_value(float min, float max, float value)
+{
+    return (value - min) / (max - min);
+}
+
+static constexpr inline float denormalize_value(float min, float max, float value)
+{
+    return value * (max - min) + min;
+}
+
+static constexpr inline float rerange_value(float src_min, float src_max, float dst_min, float dst_max, float value)
+{
+    return denormalize_value(dst_min, dst_max,
+        normalize_value(src_min, src_max, value));
+}
+
 const std::map<gamepad_id_t, gamepad_type_t, gamepad_id_less_t> Gamepad::gamepads_ids = {
     {{0x0079, 0x18d4}, {gamepad_type_t::type_e::Xbox360, "GPD Win 2 X-Box Controller"}},
     {{0x044f, 0xb326}, {gamepad_type_t::type_e::Xbox360, "Thrustmaster Gamepad GP XID"}},
