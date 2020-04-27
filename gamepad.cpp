@@ -575,8 +575,8 @@ class XInput_Device : public Gamepad
         uint8_t buff[5] = {
             0,
             0,
-            left_speed / 256,
-            right_speed / 256,
+            static_cast<uint8_t>(left_speed / 256),
+            static_cast<uint8_t>(right_speed / 256),
             2
         };
 
