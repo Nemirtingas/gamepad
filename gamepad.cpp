@@ -457,11 +457,11 @@ class XInput_Device : public Gamepad
     template<typename T>
     bool parse_buffer(T &buff)
     {
-        left_stick.x = buff.sThumbLX / (buff.sThumbLX > 0 ? 32767.0f : 32768.0f);
-        left_stick.y = buff.sThumbLY / (buff.sThumbLY > 0 ? 32767.0f : 32768.0f);
+        left_stick.x = rerange_value(-32768.0f, 32767.0f, -1.0f, 1.0f, buff.sThumbLX);
+        left_stick.y = rerange_value(-32768.0f, 32767.0f, -1.0f, 1.0f, buff.sThumbLY);
 
-        right_stick.x = buff.sThumbRX / (buff.sThumbRX > 0 ? 32767.0f : 32768.0f);
-        right_stick.y = buff.sThumbRY / (buff.sThumbRY > 0 ? 32767.0f : 32768.0f);
+        right_stick.x = rerange_value(-32768.0f, 32767.0f, -1.0f, 1.0f, buff.sThumbRX);
+        right_stick.y = rerange_value(-32768.0f, 32767.0f, -1.0f, 1.0f, buff.sThumbRY);
 
         up    = buff.wButtons & XINPUT_GAMEPAD_DPAD_UP;
         down  = buff.wButtons & XINPUT_GAMEPAD_DPAD_DOWN;
@@ -484,8 +484,8 @@ class XInput_Device : public Gamepad
         x = buff.wButtons & XINPUT_GAMEPAD_X;
         y = buff.wButtons & XINPUT_GAMEPAD_Y;
 
-        left_trigger  = buff.bLeftTrigger / 255.0f;
-        right_trigger = buff.bRightTrigger / 255.0f;
+        left_trigger = rerange_value(0.0f, 255.0f, 0.0f, 1.0f, buff.bLeftTrigger);
+        right_trigger = rerange_value(0.0f, 255.0f, 0.0f, 1.0f, buff.bRightTrigger);
 
         return buff.status == 1;
     }
@@ -785,6 +785,9 @@ class Linux_Gamepad : public Gamepad
     std::string _device_path;
     bool _dead;
 
+    float _axis_min[ABS_MAX];
+    float _axis_max[ABS_MAX];
+
     struct ff_effect _effects[NUM_EFFECTS];
 
     void get_gamepad_infos()
@@ -794,6 +797,44 @@ class Linux_Gamepad : public Gamepad
 
         id.productID = inpid.product;
         id.vendorID = inpid.vendor;
+
+        struct input_absinfo absinfo;
+
+        for (auto& axis : { ABS_X, ABS_Y, ABS_RX, ABS_RY, ABS_Z, ABS_RZ })
+        {
+            if (ioctl(_event_fd, EVIOCGABS(axis), &absinfo) >= 0)
+            {
+                if (axis == ABS_Y || axis == ABS_RY)
+                {
+                    // On Y, down is positiv, up is negativ, so swap the values
+                    std::swap(absinfo.minimum, absinfo.maximum);
+                }
+
+                _axis_min[axis] = absinfo.minimum;
+                _axis_max[axis] = absinfo.maximum;
+                //std::cout << "axis: " << axis << ":" << std::endl
+                //          << "min : " << _axis_min[axis] << std::endl
+                //          << "max : " << _axis_max[axis] << std::endl;
+            }
+            else // Failed to retrieve infos, device did not inform the OS of the ranges ?
+            {// Set some common values
+                switch (axis)
+                {
+                case ABS_X: case ABS_RX:
+                    _axis_min[axis] = -32768.0f;
+                    _axis_max[axis] = 32767.0f;
+                    break;
+                case ABS_Y: case ABS_RY:
+                    _axis_min[axis] = 32767.0f;
+                    _axis_max[axis] = -32768.0f;
+                    break;
+                case ABS_Z: case ABS_RZ:
+                    _axis_min[axis] = 0.0f;
+                    _axis_max[axis] = 255.0f;
+                    break;
+                }
+            }
+        }
 
         //std::cout << std::hex << id.vendorID << ' ' << id.productID << std::dec << std::endl;
     }
@@ -1016,49 +1057,75 @@ public:
             num_events /= sizeof(*events);
             for (int i = 0; i < num_events; ++i)
             {
+                auto const& event_code  = events[i].code;
+                auto const& event_value = events[i].value;
                 switch (events[i].type)
                 {
                     case EV_KEY:
-                        switch (events[i].code)
+                        switch (event_code)
                         {
-                            case BTN_A: a = events[i].value; break;
-                            case BTN_B: b = events[i].value; break;
-                            case BTN_X: x = events[i].value; break;
-                            case BTN_Y: y = events[i].value; break;
-                            case BTN_TL: left_shoulder = events[i].value; break;
-                            case BTN_TR: right_shoulder = events[i].value; break;
-                            case BTN_SELECT: back = events[i].value; break;
-                            case BTN_START: start = events[i].value; break;
-                            case BTN_THUMBL: left_thumb = events[i].value; break;
-                            case BTN_THUMBR: right_thumb = events[i].value; break;
-                            case BTN_MODE: guide = events[i].value; break;
+                            case BTN_A     : a              = event_value; break;
+                            case BTN_B     : b              = event_value; break;
+                            case BTN_X     : x              = event_value; break;
+                            case BTN_Y     : y              = event_value; break;
+                            case BTN_TL    : left_shoulder  = event_value; break;
+                            case BTN_TR    : right_shoulder = event_value; break;
+                            case BTN_SELECT: back           = event_value; break;
+                            case BTN_START : start          = event_value; break;
+                            case BTN_THUMBL: left_thumb     = event_value; break;
+                            case BTN_THUMBR: right_thumb    = event_value; break;
+                            case BTN_MODE  : guide          = event_value; break;
                         }
-                    break;
+                        break;
 
                     case EV_ABS:
-                        switch (events[i].code)
+                        switch (event_code)
                         {
-                            case ABS_X: left_stick.x = events[i].value / (events[i].value > 0 ? 32767.0f : 32768.0f); break;
-                            case ABS_Y: left_stick.y = events[i].value / (events[i].value > 0 ? -32767.0f : -32768.0f); break;
-                            case ABS_RX: right_stick.x = events[i].value / (events[i].value > 0 ? 32767.0f : 32768.0f); break;
-                            case ABS_RY: right_stick.y = events[i].value / (events[i].value > 0 ? -32767.0f : -32768.0f); break;
-                            case ABS_Z: left_trigger = events[i].value / 255.0f; break;
-                            case ABS_RZ: right_trigger = events[i].value / 255.0f; break;
+                            case ABS_X:
+                                left_stick.x  = rerange_value(_axis_min[event_code],
+                                                              _axis_max[event_code],
+                                                              -1.0f, 1.0f, event_value);
+                                break;
+                            case ABS_Y:
+                                left_stick.y  = rerange_value(_axis_min[event_code],
+                                                              _axis_max[event_code],
+                                                              -1.0f, 1.0f, event_value);
+                                break;
+                            case ABS_RX:
+                                right_stick.x = rerange_value(_axis_min[event_code],
+                                                              _axis_max[event_code],
+                                                              -1.0f, 1.0f, event_value);
+                                break;
+                            case ABS_RY:
+                                right_stick.y = rerange_value(_axis_min[event_code],
+                                                              _axis_max[event_code],
+                                                              -1.0f, 1.0f, event_value);
+                                break;
+                            case ABS_Z:
+                                left_trigger  = rerange_value(_axis_min[event_code],
+                                                              _axis_max[event_code],
+                                                              0.0f, 1.0f, event_value);
+                                break;
+                            case ABS_RZ:
+                                right_trigger = rerange_value(_axis_min[event_code],
+                                                              _axis_max[event_code],
+                                                              0.0f, 1.0f, event_value);
+                                break;
                             case ABS_HAT0X:
-                                if (events[i].value == 0)
+                                if (event_value == 0)
                                     left = right = false;
                                 else
-                                    left = !(right = events[i].value == 1);
-                            break;
+                                    left = !(right = event_value == 1);
+                                break;
                             case ABS_HAT0Y:
-                                if (events[i].value == 0)
+                                if (event_value == 0)
                                     up = down = false;
                                 else
-                                    up = !(down = events[i].value == 1);
-                            break;
+                                    up = !(down = event_value == 1);
+                                break;
                         }
-                    break;
-                }
+                        break;
+                    }
             }
         }
 
