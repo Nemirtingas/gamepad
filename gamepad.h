@@ -17,82 +17,120 @@
 
 #pragma once
 
-#include <array>
 #include <cstdint>
-#include <map>
-#include <string>
+
+namespace gamepad
+{
 
 struct gamepad_id_t
 {
-    uint16_t vendorID;
-    uint16_t productID;
-};
-
-struct gamepad_id_less_t
-{
-    bool operator()(gamepad_id_t const& l, gamepad_id_t const& r) const
-    {
-        return (l.vendorID | (l.productID << sizeof(uint16_t))) < (r.vendorID | (r.productID << sizeof(uint16_t)));
-    }
+    union {
+        struct {
+            uint16_t vendorID;
+            uint16_t productID;
+            //uint8_t reserved[4];
+        };
+        uint64_t id;
+    };
 };
 
 struct gamepad_type_t
 {
     enum class type_e
     {
+        Unknown,
         Xbox360,
         XboxOne,
         Switch,
         PS3,
         PS4
-    } type;
-    std::string name;
+    };
+
+    type_e type;
+    const char* name;
 };
 
 struct stick_pos_t
 {
+    // Left  = -1.0f
+    // Right =  1.0f
     float x;
+    // Down  = -1.0f
+    // Up    =  1.0f
     float y;
 };
 
-class Gamepad
+constexpr uint32_t max_connected_gamepads = 16;
+
+constexpr int32_t success = 0;
+constexpr int32_t failed = -1;
+constexpr int32_t invalid_parameter = -2;
+
+constexpr float gamepad_left_thumb_deadzone  = 0.1f;
+constexpr float gamepad_right_thumb_deadzone = 0.15f;
+constexpr float gamepad_trigger_threshold    = 0.12f;
+
+constexpr uint32_t button_none           = 0x0000u;
+constexpr uint32_t button_up             = 0x0001u;
+constexpr uint32_t button_down           = 0x0002u;
+constexpr uint32_t button_left           = 0x0004u;
+constexpr uint32_t button_right          = 0x0008u;
+constexpr uint32_t button_start          = 0x0010u;
+constexpr uint32_t button_back           = 0x0020u;
+constexpr uint32_t button_left_thumb     = 0x0040u;
+constexpr uint32_t button_right_thumb    = 0x0080u;
+constexpr uint32_t button_left_shoulder  = 0x0100u;
+constexpr uint32_t button_right_shoulder = 0x0200u;
+constexpr uint32_t button_guide          = 0x0400u;
+constexpr uint32_t button_a              = 0x1000u;
+constexpr uint32_t button_b              = 0x2000u;
+constexpr uint32_t button_x              = 0x4000u;
+constexpr uint32_t button_y              = 0x8000u;
+
+constexpr inline bool are_all_pressed(uint32_t buttons, uint32_t button_mask)
 {
-protected:
-    Gamepad();
+    return ((buttons & button_mask) == button_mask);
+}
 
-public:
-    constexpr static uint8_t max_connected_gamepads = 16;
+constexpr inline bool is_any_pressed(uint32_t buttons, uint32_t button_mask)
+{
+    return ((buttons & button_mask) != gamepad::button_none);
+}
 
-    gamepad_id_t id;
+constexpr inline float normalize_value(float min, float max, float value)
+{
+    return (value - min) / (max - min);
+}
 
-    bool  up            : 1;
-    bool  down          : 1;
-    bool  left          : 1;
-    bool  right         : 1;
-    bool  start         : 1;
-    bool  back          : 1;
-    bool  left_shoulder : 1;
-    bool  right_shoulder: 1;
-    bool  left_thumb    : 1;
-    bool  right_thumb   : 1;
-    bool  a             : 1;
-    bool  b             : 1;
-    bool  x             : 1;
-    bool  y             : 1;
-    bool guide          : 1;
+constexpr inline float denormalize_value(float min, float max, float value)
+{
+    return value * (max - min) + min;
+}
+
+constexpr inline float rerange_value(float src_min, float src_max, float dst_min, float dst_max, float value)
+{
+    return denormalize_value(dst_min, dst_max,
+        normalize_value(src_min, src_max, value));
+}
+
+struct gamepad_state_t
+{
+    uint32_t buttons;
     stick_pos_t left_stick;
     stick_pos_t right_stick;
     float left_trigger;
     float right_trigger;
-
-    static std::array<Gamepad *const, max_connected_gamepads>& get_gamepads(bool redetect = true);
-    static const std::map<gamepad_id_t, gamepad_type_t, gamepad_id_less_t> gamepads_ids;
-
-    virtual ~Gamepad();
-
-    virtual int GetXinputId() = 0;
-    virtual bool RunFrame() = 0;
-    virtual bool SetVibration(uint16_t left_speed, uint16_t right_speed) = 0;
-    virtual bool SetLed(uint8_t r, uint8_t g, uint8_t b) = 0;
-    virtual bool Enabled() = 0;
 };
+
+const gamepad_type_t& get_gamepad_type(gamepad_id_t const& id);
+int32_t update_gamepad_state(uint32_t index);
+int32_t get_gamepad_id(uint32_t index, gamepad_id_t* id);
+int32_t get_gamepad_state(uint32_t index, gamepad_state_t* state);
+// Normalized strength ([0.0, 1.0])
+int32_t set_gamepad_vibration(uint32_t index, float left_strength, float right_strength);
+int32_t set_gamepad_led(uint32_t index, uint8_t r, uint8_t g, uint8_t b);
+
+// If you feel like freeing resources before leaving, call this.
+void free_gamepad_resources();
+
+}
