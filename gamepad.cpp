@@ -1209,6 +1209,11 @@ static int32_t internal_get_gamepad(uint32_t index, gamepad_context_t** pp_conte
     return gamepad::failed;
 }
 
+static int32_t internal_update_gamepad_state(gamepad_context_t* p_context)
+{
+    return gamepad::failed;
+}
+
 static int32_t internal_get_gamepad_state(gamepad_context_t* p_context, gamepad_state_t* p_gamepad_state)
 {
     return gamepad::failed;
@@ -1232,7 +1237,6 @@ static int32_t internal_set_gamepad_led(gamepad_context_t* p_context, uint8_t r,
 static void internal_free_all_contexts()
 {
 }
-
 
 #endif
 
