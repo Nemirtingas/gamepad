@@ -58,7 +58,7 @@ void clreol()
     GetConsoleInfos(hConsole, &Infos);
 	coords.X = Infos.dwCursorPosition.X;
     coords.Y = Infos.dwCursorPosition.Y;
-	FillConsoleOutputCharacterA(HConsole, ' ', (Infos.dwSize.X - coords.X), coords, &NumberOfCharWritten);
+	FillConsoleOutputCharacterA(hConsole, ' ', (Infos.dwSize.X - coords.X), coords, &NumberOfCharWritten);
 }
 
 bool setcursortype(unsigned int Type)

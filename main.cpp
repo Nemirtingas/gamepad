@@ -6,6 +6,14 @@
 
 #include "conio.h"
 
+#ifdef _WIN32
+#define SPRINTF sprintf_s
+
+#else
+#define SPRINTF sprintf
+
+#endif
+
 enum DeviceConsoleBufferIndex
 {
     DEVICE_STATUS = 0                 ,
@@ -53,34 +61,34 @@ struct GamepadDevice_t
 void BuildDeviceConsoleOutput(GamepadDevice_t& device)
 {
     // Status
-    sprintf(device.console_buffer[DEVICE_STATUS]                     , "     Device %u %s !", device.device_index, device.connected ? "connected" : "disconnected");
+    SPRINTF(device.console_buffer[DEVICE_STATUS]                     , "     Device %u %s !", device.device_index, device.connected ? "connected" : "disconnected");
     // Id
-    sprintf(device.console_buffer[DEVICE_ID_HEADER]                  , "Device ID:");
-    sprintf(device.console_buffer[DEVICE_VENDOR_ID]                  , "  - Vendor ID : %04x", device.id.vendorID);
-    sprintf(device.console_buffer[DEVICE_PRODUCT_ID]                 , "  - Product ID: %04x", device.id.productID);
+    SPRINTF(device.console_buffer[DEVICE_ID_HEADER]                  , "Device ID:");
+    SPRINTF(device.console_buffer[DEVICE_VENDOR_ID]                  , "  - Vendor ID : %04x", device.id.vendorID);
+    SPRINTF(device.console_buffer[DEVICE_PRODUCT_ID]                 , "  - Product ID: %04x", device.id.productID);
     // State
-    sprintf(device.console_buffer[DEVICE_STATE_HEADER]               , "Device State:");
-    sprintf(device.console_buffer[DEVICE_STATE_BUTTON_DPAD_UP]       , "  - UP       : %u" , gamepad::are_all_pressed(device.state.buttons, gamepad::button_up));
-    sprintf(device.console_buffer[DEVICE_STATE_BUTTON_DPAD_DOWN]     , "  - DOWN     : %u" , gamepad::are_all_pressed(device.state.buttons, gamepad::button_down));
-    sprintf(device.console_buffer[DEVICE_STATE_BUTTON_DPAD_LEFT]     , "  - LEFT     : %u" , gamepad::are_all_pressed(device.state.buttons, gamepad::button_left));
-    sprintf(device.console_buffer[DEVICE_STATE_BUTTON_DPAD_RIGHT]    , "  - RIGHT    : %u" , gamepad::are_all_pressed(device.state.buttons, gamepad::button_right));
-    sprintf(device.console_buffer[DEVICE_STATE_BUTTON_START]         , "  - START    : %u" , gamepad::are_all_pressed(device.state.buttons, gamepad::button_start));
-    sprintf(device.console_buffer[DEVICE_STATE_BUTTON_BACK]          , "  - BACK     : %u" , gamepad::are_all_pressed(device.state.buttons, gamepad::button_back));
-    sprintf(device.console_buffer[DEVICE_STATE_BUTTON_LEFT_THUMB]    , "  - LTHUMB   : %u" , gamepad::are_all_pressed(device.state.buttons, gamepad::button_left_thumb));
-    sprintf(device.console_buffer[DEVICE_STATE_BUTTON_RIGHT_THUMB]   , "  - RTHUMB   : %u" , gamepad::are_all_pressed(device.state.buttons, gamepad::button_right_thumb));
-    sprintf(device.console_buffer[DEVICE_STATE_BUTTON_LEFT_SHOULDER] , "  - LSHOULDER: %u" , gamepad::are_all_pressed(device.state.buttons, gamepad::button_left_shoulder));
-    sprintf(device.console_buffer[DEVICE_STATE_BUTTON_RIGHT_SHOULDER], "  - RSHOULDER: %u" , gamepad::are_all_pressed(device.state.buttons, gamepad::button_right_shoulder));
-    sprintf(device.console_buffer[DEVICE_STATE_BUTTON_GUIDE]         , "  - GUIDE    : %u" , gamepad::are_all_pressed(device.state.buttons, gamepad::button_guide));
-    sprintf(device.console_buffer[DEVICE_STATE_BUTTON_A]             , "  - A        : %u" , gamepad::are_all_pressed(device.state.buttons, gamepad::button_a));
-    sprintf(device.console_buffer[DEVICE_STATE_BUTTON_B]             , "  - B        : %u" , gamepad::are_all_pressed(device.state.buttons, gamepad::button_b));
-    sprintf(device.console_buffer[DEVICE_STATE_BUTTON_X]             , "  - X        : %u" , gamepad::are_all_pressed(device.state.buttons, gamepad::button_x));
-    sprintf(device.console_buffer[DEVICE_STATE_BUTTON_Y]             , "  - Y        : %u" , gamepad::are_all_pressed(device.state.buttons, gamepad::button_y));
-    sprintf(device.console_buffer[DEVICE_STATE_LEFTTRIGGER]          , "  - LTrigger : %.2f", device.state.left_trigger);
-    sprintf(device.console_buffer[DEVICE_STATE_RIGHTTRIGGER]         , "  - RTrigger : %.2f", device.state.right_trigger);
-    sprintf(device.console_buffer[DEVICE_STATE_LEFTTHUMBX]           , "  - Left X   : %.2f", device.state.left_stick.x);
-    sprintf(device.console_buffer[DEVICE_STATE_LEFTTHUMBY]           , "  - Left Y   : %.2f", device.state.left_stick.y);
-    sprintf(device.console_buffer[DEVICE_STATE_RIGHTTHUMBX]          , "  - Right X  : %.2f", device.state.right_stick.x);
-    sprintf(device.console_buffer[DEVICE_STATE_RIGHTTHUMBY]          , "  - Right Y  : %.2f", device.state.right_stick.y);
+    SPRINTF(device.console_buffer[DEVICE_STATE_HEADER]               , "Device State:");
+    SPRINTF(device.console_buffer[DEVICE_STATE_BUTTON_DPAD_UP]       , "  - UP       : %u" , gamepad::are_all_pressed(device.state.buttons, gamepad::button_up));
+    SPRINTF(device.console_buffer[DEVICE_STATE_BUTTON_DPAD_DOWN]     , "  - DOWN     : %u" , gamepad::are_all_pressed(device.state.buttons, gamepad::button_down));
+    SPRINTF(device.console_buffer[DEVICE_STATE_BUTTON_DPAD_LEFT]     , "  - LEFT     : %u" , gamepad::are_all_pressed(device.state.buttons, gamepad::button_left));
+    SPRINTF(device.console_buffer[DEVICE_STATE_BUTTON_DPAD_RIGHT]    , "  - RIGHT    : %u" , gamepad::are_all_pressed(device.state.buttons, gamepad::button_right));
+    SPRINTF(device.console_buffer[DEVICE_STATE_BUTTON_START]         , "  - START    : %u" , gamepad::are_all_pressed(device.state.buttons, gamepad::button_start));
+    SPRINTF(device.console_buffer[DEVICE_STATE_BUTTON_BACK]          , "  - BACK     : %u" , gamepad::are_all_pressed(device.state.buttons, gamepad::button_back));
+    SPRINTF(device.console_buffer[DEVICE_STATE_BUTTON_LEFT_THUMB]    , "  - LTHUMB   : %u" , gamepad::are_all_pressed(device.state.buttons, gamepad::button_left_thumb));
+    SPRINTF(device.console_buffer[DEVICE_STATE_BUTTON_RIGHT_THUMB]   , "  - RTHUMB   : %u" , gamepad::are_all_pressed(device.state.buttons, gamepad::button_right_thumb));
+    SPRINTF(device.console_buffer[DEVICE_STATE_BUTTON_LEFT_SHOULDER] , "  - LSHOULDER: %u" , gamepad::are_all_pressed(device.state.buttons, gamepad::button_left_shoulder));
+    SPRINTF(device.console_buffer[DEVICE_STATE_BUTTON_RIGHT_SHOULDER], "  - RSHOULDER: %u" , gamepad::are_all_pressed(device.state.buttons, gamepad::button_right_shoulder));
+    SPRINTF(device.console_buffer[DEVICE_STATE_BUTTON_GUIDE]         , "  - GUIDE    : %u" , gamepad::are_all_pressed(device.state.buttons, gamepad::button_guide));
+    SPRINTF(device.console_buffer[DEVICE_STATE_BUTTON_A]             , "  - A        : %u" , gamepad::are_all_pressed(device.state.buttons, gamepad::button_a));
+    SPRINTF(device.console_buffer[DEVICE_STATE_BUTTON_B]             , "  - B        : %u" , gamepad::are_all_pressed(device.state.buttons, gamepad::button_b));
+    SPRINTF(device.console_buffer[DEVICE_STATE_BUTTON_X]             , "  - X        : %u" , gamepad::are_all_pressed(device.state.buttons, gamepad::button_x));
+    SPRINTF(device.console_buffer[DEVICE_STATE_BUTTON_Y]             , "  - Y        : %u" , gamepad::are_all_pressed(device.state.buttons, gamepad::button_y));
+    SPRINTF(device.console_buffer[DEVICE_STATE_LEFTTRIGGER]          , "  - LTrigger : %.2f", device.state.left_trigger);
+    SPRINTF(device.console_buffer[DEVICE_STATE_RIGHTTRIGGER]         , "  - RTrigger : %.2f", device.state.right_trigger);
+    SPRINTF(device.console_buffer[DEVICE_STATE_LEFTTHUMBX]           , "  - Left X   : %.2f", device.state.left_stick.x);
+    SPRINTF(device.console_buffer[DEVICE_STATE_LEFTTHUMBY]           , "  - Left Y   : %.2f", device.state.left_stick.y);
+    SPRINTF(device.console_buffer[DEVICE_STATE_RIGHTTHUMBX]          , "  - Right X  : %.2f", device.state.right_stick.x);
+    SPRINTF(device.console_buffer[DEVICE_STATE_RIGHTTHUMBY]          , "  - Right Y  : %.2f", device.state.right_stick.y);
 }
 
 void PrintDeviceConsoleOutput(GamepadDevice_t& device)
