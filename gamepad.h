@@ -58,6 +58,9 @@ struct stick_pos_t
     // Down  = -1.0f
     // Up    =  1.0f
     float y;
+
+    bool operator ==(stick_pos_t const& other) { return x == other.x && y == other.y; }
+    bool operator !=(stick_pos_t const& other) { return !(*this == other); }
 };
 
 constexpr uint32_t max_connected_gamepads = 16;
@@ -132,10 +135,7 @@ struct gamepad_state_t
             && right_trigger == right_trigger;
     }
 
-    bool operator !=(gamepad_state_t const& other)
-    {
-        return !(*this == other);
-    }
+    bool operator !=(gamepad_state_t const& other) { return !(*this == other); }
 };
 
 const gamepad_type_t& get_gamepad_type(gamepad_id_t const& id);
