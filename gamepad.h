@@ -120,6 +120,22 @@ struct gamepad_state_t
     stick_pos_t right_stick;
     float left_trigger;
     float right_trigger;
+
+    bool operator ==(gamepad_state_t const& other)
+    {
+        return buttons == other.buttons
+            && left_stick.x == other.left_stick.x
+            && left_stick.y == other.left_stick.y
+            && right_stick.x == other.right_stick.x
+            && right_stick.y == other.right_stick.y
+            && left_trigger == left_trigger
+            && right_trigger == right_trigger;
+    }
+
+    bool operator !=(gamepad_state_t const& other)
+    {
+        return !(*this == other);
+    }
 };
 
 const gamepad_type_t& get_gamepad_type(gamepad_id_t const& id);
