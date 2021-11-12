@@ -442,6 +442,7 @@ static int32_t get_gamepad_infos(gamepad_context_t* p_context)
             {
                 //dwUserIndex = i;
                 p_context->type = buffer[0];
+                p_context->id.id = 0;
                 p_context->id.vendorID = buffer[4];
                 p_context->id.productID = buffer[5];
 
