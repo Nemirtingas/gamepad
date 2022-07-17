@@ -73,22 +73,23 @@ constexpr float gamepad_left_thumb_deadzone  = 0.1f;
 constexpr float gamepad_right_thumb_deadzone = 0.15f;
 constexpr float gamepad_trigger_threshold    = 0.12f;
 
-constexpr uint32_t button_none           = 0x0000u;
-constexpr uint32_t button_up             = 0x0001u;
-constexpr uint32_t button_down           = 0x0002u;
-constexpr uint32_t button_left           = 0x0004u;
-constexpr uint32_t button_right          = 0x0008u;
-constexpr uint32_t button_start          = 0x0010u;
-constexpr uint32_t button_back           = 0x0020u;
-constexpr uint32_t button_left_thumb     = 0x0040u;
-constexpr uint32_t button_right_thumb    = 0x0080u;
-constexpr uint32_t button_left_shoulder  = 0x0100u;
-constexpr uint32_t button_right_shoulder = 0x0200u;
-constexpr uint32_t button_guide          = 0x0400u;
-constexpr uint32_t button_a              = 0x1000u;
-constexpr uint32_t button_b              = 0x2000u;
-constexpr uint32_t button_x              = 0x4000u;
-constexpr uint32_t button_y              = 0x8000u;
+constexpr uint32_t button_none           = 0x00000000u;
+constexpr uint32_t button_up             = 0x00000001u;
+constexpr uint32_t button_down           = 0x00000002u;
+constexpr uint32_t button_left           = 0x00000004u;
+constexpr uint32_t button_right          = 0x00000008u;
+constexpr uint32_t button_start          = 0x00000010u;
+constexpr uint32_t button_back           = 0x00000020u;
+constexpr uint32_t button_left_thumb     = 0x00000040u;
+constexpr uint32_t button_right_thumb    = 0x00000080u;
+constexpr uint32_t button_left_shoulder  = 0x00000100u;
+constexpr uint32_t button_right_shoulder = 0x00000200u;
+constexpr uint32_t button_guide          = 0x00000400u;
+constexpr uint32_t button_a              = 0x00001000u;
+constexpr uint32_t button_b              = 0x00002000u;
+constexpr uint32_t button_x              = 0x00004000u;
+constexpr uint32_t button_y              = 0x00008000u;
+constexpr uint32_t button_share          = 0x00010000u;
 
 constexpr inline bool are_all_pressed(uint32_t buttons, uint32_t button_mask)
 {

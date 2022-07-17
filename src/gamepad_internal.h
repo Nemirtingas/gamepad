@@ -153,7 +153,7 @@ struct GamepadState0101
     BYTE  unk8;
     BYTE  unk9;
     BYTE  unk10;
-    BYTE  unk11;
+    BYTE  bExtraButtons;
 };
 
 #pragma pack(pop)

@@ -15,7 +15,7 @@
  * along with gamepad.  If not, see <https://www.gnu.org/licenses/>
  */
 
-#include "gamepad.h"
+#include <gamepad/gamepad.h>
 #include "gamepad_internal.h"
 #include <mutex>
 
@@ -395,8 +395,7 @@ static HRESULT DeviceInOutIo(gamepad_context_t* context, DWORD nioctl, void* in_
     return DeviceIo(context, nioctl, in_buff, in_buff_size, out_buff, out_buff_size, nullptr);
 }
 
-template<typename T>
-static int32_t parse_buffer(gamepad_state_t* p_gamepad_state, T &buff)
+static int32_t parse_buffer(gamepad_state_t* p_gamepad_state, GamepadState0100 &buff)
 {
     if (buff.status != 1) // Gamepad is offline
         return gamepad::failed;
@@ -408,22 +407,28 @@ static int32_t parse_buffer(gamepad_state_t* p_gamepad_state, T &buff)
     p_gamepad_state->right_stick.y = rerange_value(-32768.0f, 32767.0f, -1.0f, 1.0f, buff.sThumbRY);
 
     p_gamepad_state->buttons = buff.wButtons;
-    //p_gamepad_state->buttons = 0;
-    //p_gamepad_state->buttons |= (buff.wButtons & XINPUT_GAMEPAD_DPAD_UP       ? button_up             : button_none);
-    //p_gamepad_state->buttons |= (buff.wButtons & XINPUT_GAMEPAD_DPAD_DOWN     ? button_down           : button_none);
-    //p_gamepad_state->buttons |= (buff.wButtons & XINPUT_GAMEPAD_DPAD_LEFT     ? button_left           : button_none);
-    //p_gamepad_state->buttons |= (buff.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT    ? button_right          : button_none);
-    //p_gamepad_state->buttons |= (buff.wButtons & XINPUT_GAMEPAD_START         ? button_start          : button_none);
-    //p_gamepad_state->buttons |= (buff.wButtons & XINPUT_GAMEPAD_BACK          ? button_back           : button_none);
-    //p_gamepad_state->buttons |= (buff.wButtons & XINPUT_GAMEPAD_LEFT_THUMB    ? button_left_thumb     : button_none);
-    //p_gamepad_state->buttons |= (buff.wButtons & XINPUT_GAMEPAD_RIGHT_THUMB   ? button_right_thumb    : button_none);
-    //p_gamepad_state->buttons |= (buff.wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER ? button_left_shoulder  : button_none);
-    //p_gamepad_state->buttons |= (buff.wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER? button_right_shoulder : button_none);
-    //p_gamepad_state->buttons |= (buff.wButtons & XINPUT_GAMEPAD_GUIDE         ? button_guide          : button_none);
-    //p_gamepad_state->buttons |= (buff.wButtons & XINPUT_GAMEPAD_A             ? button_a              : button_none);
-    //p_gamepad_state->buttons |= (buff.wButtons & XINPUT_GAMEPAD_B             ? button_b              : button_none);
-    //p_gamepad_state->buttons |= (buff.wButtons & XINPUT_GAMEPAD_X             ? button_x              : button_none);
-    //p_gamepad_state->buttons |= (buff.wButtons & XINPUT_GAMEPAD_Y             ? button_y              : button_none);
+
+    p_gamepad_state->left_trigger = rerange_value(0.0f, 255.0f, 0.0f, 1.0f, buff.bLeftTrigger);
+    p_gamepad_state->right_trigger = rerange_value(0.0f, 255.0f, 0.0f, 1.0f, buff.bRightTrigger);
+
+    return gamepad::success;
+}
+
+static int32_t parse_buffer(gamepad_state_t* p_gamepad_state, GamepadState0101 &buff)
+{
+    if (buff.status != 1) // Gamepad is offline
+        return gamepad::failed;
+
+    p_gamepad_state->left_stick.x = rerange_value(-32768.0f, 32767.0f, -1.0f, 1.0f, buff.sThumbLX);
+    p_gamepad_state->left_stick.y = rerange_value(-32768.0f, 32767.0f, -1.0f, 1.0f, buff.sThumbLY);
+
+    p_gamepad_state->right_stick.x = rerange_value(-32768.0f, 32767.0f, -1.0f, 1.0f, buff.sThumbRX);
+    p_gamepad_state->right_stick.y = rerange_value(-32768.0f, 32767.0f, -1.0f, 1.0f, buff.sThumbRY);
+
+    p_gamepad_state->buttons = buff.wButtons;
+
+    if (buff.bExtraButtons & 0x01)
+        p_gamepad_state->buttons |= button_share;
 
     p_gamepad_state->left_trigger = rerange_value(0.0f, 255.0f, 0.0f, 1.0f, buff.bLeftTrigger);
     p_gamepad_state->right_trigger = rerange_value(0.0f, 255.0f, 0.0f, 1.0f, buff.bRightTrigger);
