@@ -74,7 +74,7 @@ const gamepad_type_t& get_gamepad_type(gamepad_id_t const& id)
         {{0x045e, 0x02ea}, gamepad_type_t::type_e::XboxOne, "Microsoft X-Box One S pad"},
         {{0x045e, 0x02fd}, gamepad_type_t::type_e::XboxOne, "Microsoft X-Box One S pad (Bluetooth)"},
         {{0x045e, 0x02ff}, gamepad_type_t::type_e::XboxOne, "Microsoft X-Box One Elite pad"},
-        {{0x045e, 0x0b13}, gamepad_type_t::type_e::XboxOne, "Microsoft X-Box One Special Edition Wireless Controller"},
+        {{0x045e, 0x0b13}, gamepad_type_t::type_e::XboxOne, "Microsoft X-Box One Wireless Controller"},
         {{0x045e, 0x0719}, gamepad_type_t::type_e::Xbox360, "Xbox 360 Wireless Receiver"},
         {{0x046d, 0xc21d}, gamepad_type_t::type_e::Xbox360, "Logitech Gamepad F310"},
         {{0x046d, 0xc21e}, gamepad_type_t::type_e::Xbox360, "Logitech Gamepad F510"},
