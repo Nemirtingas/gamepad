@@ -90,6 +90,10 @@ constexpr uint32_t button_b              = 0x00002000u;
 constexpr uint32_t button_x              = 0x00004000u;
 constexpr uint32_t button_y              = 0x00008000u;
 constexpr uint32_t button_share          = 0x00010000u;
+constexpr uint32_t button_paddle1        = 0x00020000u;
+constexpr uint32_t button_paddle2        = 0x00040000u;
+constexpr uint32_t button_paddle3        = 0x00080000u;
+constexpr uint32_t button_paddle4        = 0x00100000u;
 
 constexpr inline bool are_all_pressed(uint32_t buttons, uint32_t button_mask)
 {

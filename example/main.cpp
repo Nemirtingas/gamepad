@@ -146,7 +146,7 @@ void OnDeviceDisconnect(GamepadDevice_t& device)
 int main(int argc, char *argv[])
 {
     int MaxControllerCount = 2;
-    std::unique_ptr<GamepadDevice_t[]> devices = std::make_unique<GamepadDevice_t[]>(MaxControllerCount);
+    std::unique_ptr<GamepadDevice_t[]> devices(new GamepadDevice_t[MaxControllerCount]);
 
     for (int i = 0; i < MaxControllerCount; ++i)
     {
