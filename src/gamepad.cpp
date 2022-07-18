@@ -75,7 +75,9 @@ const gamepad_type_t& get_gamepad_type(gamepad_id_t const& id)
         {{0x045e, 0x02ea}, gamepad_type_t::type_e::XboxOne, "Microsoft X-Box One S pad"},
         {{0x045e, 0x02fd}, gamepad_type_t::type_e::XboxOne, "Microsoft X-Box One S pad (Bluetooth)"},
         {{0x045e, 0x02ff}, gamepad_type_t::type_e::XboxOne, "Microsoft X-Box One Elite pad"},
+        {{0x045e, 0x0b12}, gamepad_type_t::type_e::XboxOne, "Microsoft X-Box One Wireless Controller"},
         {{0x045e, 0x0b13}, gamepad_type_t::type_e::XboxOne, "Microsoft X-Box One Wireless Controller"},
+        {{0x045e, 0x0b20}, gamepad_type_t::type_e::XboxOne, "Microsoft X-Box One Wireless Controller"},
         {{0x045e, 0x0719}, gamepad_type_t::type_e::Xbox360, "Xbox 360 Wireless Receiver"},
         {{0x046d, 0xc21d}, gamepad_type_t::type_e::Xbox360, "Logitech Gamepad F310"},
         {{0x046d, 0xc21e}, gamepad_type_t::type_e::Xbox360, "Logitech Gamepad F510"},
@@ -1343,44 +1345,6 @@ void internal_free_all_contexts()
 }
 
 #elif defined(GAMEPAD_OS_APPLE)
-
-struct gamepad_context_t
-{
-};
-
-static int32_t internal_get_gamepad(uint32_t index, gamepad_context_t** pp_context)
-{
-    return gamepad::failed;
-}
-
-static int32_t internal_update_gamepad_state(gamepad_context_t* p_context)
-{
-    return gamepad::failed;
-}
-
-static int32_t internal_get_gamepad_state(gamepad_context_t* p_context, gamepad_state_t* p_gamepad_state)
-{
-    return gamepad::failed;
-}
-
-static int32_t internal_get_gamepad_id(gamepad_context_t* p_context, gamepad_id_t* p_gamepad_id)
-{
-    return gamepad::failed;
-}
-
-static int32_t internal_set_gamepad_vibration(gamepad_context_t* p_context, float left_strength, float right_strength)
-{
-    return gamepad::failed;
-}
-
-static int32_t internal_set_gamepad_led(gamepad_context_t* p_context, uint8_t r, uint8_t g, uint8_t b)
-{
-    return gamepad::failed;
-}
-
-static void internal_free_all_contexts()
-{
-}
 
 #endif
 

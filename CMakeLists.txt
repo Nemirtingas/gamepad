@@ -13,11 +13,21 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 option(GAMEPAD_BUILD_EXAMPLE "Build gamepad example." OFF)
 option(BUILD_SHARED_LIBS     "Build gamepad as a shared library" OFF)
 
+if(APPLE)
+  enable_language(OBJCXX)
+endif()
+
 set(LIBRARY_NAME gamepad)
 
-set(GAMEPAD_SOURCES
-  src/gamepad.cpp
-)
+if(APPLE)
+  set(GAMEPAD_SOURCES
+    src/gamepad.mm
+  )
+else()
+  set(GAMEPAD_SOURCES
+    src/gamepad.cpp
+  )
+endif()
 
 set(GAMEPAD_HEADERS
   include/gamepad/gamepad.h
@@ -41,10 +51,18 @@ set_target_properties(${LIBRARY_NAME} PROPERTIES
   VISIBILITY_INLINES_HIDDEN ON
 )
  
-target_link_libraries(${LIBRARY_NAME}
-  PUBLIC
-  $<$<BOOL:${WIN32}>:setupapi>
-)
+if(APPLE)
+  target_link_libraries(${LIBRARY_NAME}
+    PUBLIC
+    "-framework Foundation"
+    "-framework IOKit"
+  )
+else()
+  target_link_libraries(${LIBRARY_NAME}
+    PUBLIC
+    $<$<BOOL:${WIN32}>:setupapi>
+  )
+endif()
 
 target_include_directories(${LIBRARY_NAME}
   PUBLIC
