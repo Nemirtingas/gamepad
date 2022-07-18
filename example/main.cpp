@@ -120,6 +120,8 @@ void OnDeviceInfoChange(GamepadDevice_t& device)
     BuildDeviceConsoleOutput(device);
     PrintDeviceConsoleOutput(device);
     memcpy(&device.old_state, &device.state, sizeof(device.state));
+
+    gamepad::set_gamepad_vibration(device.device_index, device.state.left_trigger, device.state.right_trigger);
 }
 
 void OnDeviceConnect(GamepadDevice_t& device)
