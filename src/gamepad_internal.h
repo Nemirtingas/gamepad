@@ -190,4 +190,10 @@ struct GamepadState0101
 
 #elif defined(GAMEPAD_OS_APPLE)
 
+#include <thread>
+#include <set>
+
+#include <Foundation/NSString.h>
+#include <IOKit/hid/IOHIDLib.h>
+
 #endif

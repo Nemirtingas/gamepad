@@ -1,13 +1,6 @@
 #include "gamepad.cpp"
 
-#include <thread>
-#include <set>
-
-#include <Foundation/NSString.h>
-#include <IOKit/hid/IOHIDLib.h>
-
-namespace gamepad
-{
+namespace gamepad {
 
 class RunLoopHelper
 {
