@@ -15,11 +15,9 @@ option(BUILD_SHARED_LIBS     "Build gamepad as a shared library" OFF)
 
 if(APPLE)
   enable_language(OBJCXX)
-endif()
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+  set(CMAKE_OBJCXX_FLAGS "${CMAKE_OBJCXX_FLAGS} -stdlib=libc++")
 
-set(LIBRARY_NAME gamepad)
-
-if(APPLE)
   set(GAMEPAD_SOURCES
     src/gamepad.mm
   )
@@ -37,13 +35,13 @@ set(GAMEPAD_PRIVATE_HEADERS
   src/gamepad_internal.h
 )
 
-add_library(${LIBRARY_NAME}
+add_library(gamepad
   ${GAMEPAD_SOURCES}
   ${GAMEPAD_HEADERS}
   ${GAMEPAD_PRIVATE_HEADERS}
 )
 
-set_target_properties(${LIBRARY_NAME} PROPERTIES
+set_target_properties(gamepad PROPERTIES
   MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
   POSITION_INDEPENDENT_CODE ON
   C_VISIBILITY_PRESET hidden
@@ -52,34 +50,37 @@ set_target_properties(${LIBRARY_NAME} PROPERTIES
 )
  
 if(APPLE)
-  target_link_libraries(${LIBRARY_NAME}
+  target_link_libraries(gamepad
     PUBLIC
     "-framework Foundation"
     "-framework IOKit"
   )
 else()
-  target_link_libraries(${LIBRARY_NAME}
+  target_link_libraries(gamepad
     PUBLIC
     $<$<BOOL:${WIN32}>:setupapi>
   )
 endif()
 
-target_include_directories(${LIBRARY_NAME}
+target_include_directories(gamepad
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
 )
 
+add_library(Gamepad::Gamepad ALIAS gamepad)
+set_target_properties(gamepad PROPERTIES EXPORT_NAME Gamepad)
+
 ##################
 ## Examples
 if(${GAMEPAD_BUILD_EXAMPLE})
 
-add_executable(${LIBRARY_NAME}_example
+add_executable(gamepad_example
   example/main.cpp
   example/conio.cpp
 )
 
-set_target_properties(${LIBRARY_NAME}_example PROPERTIES
+set_target_properties(gamepad_example PROPERTIES
   MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
   POSITION_INDEPENDENT_CODE ON
   C_VISIBILITY_PRESET hidden
@@ -87,23 +88,17 @@ set_target_properties(${LIBRARY_NAME}_example PROPERTIES
   VISIBILITY_INLINES_HIDDEN ON
 )
 
-target_link_libraries(${LIBRARY_NAME}_example
+target_link_libraries(gamepad_example
   PRIVATE
   ${LIBRARY_NAME}
 )
 
-target_include_directories(${LIBRARY_NAME}_example
+target_include_directories(gamepad_example
   PRIVATE
   include/
 )
 
 endif()
-
-##################
-## Install rules
-
-add_library(Gamepad::Gamepad ALIAS gamepad)
-set_target_properties(gamepad PROPERTIES EXPORT_NAME Gamepad)
 
 ##################
 ## Install rules
@@ -113,12 +108,14 @@ install(TARGETS gamepad EXPORT GamepadTargets
   ARCHIVE DESTINATION lib
 )
 
-install(FILES ${GAMEPAD_HEADERS} DESTINATION include/gamepad)
+install(FILES ${GAMEPAD_HEADERS}
+  DESTINATION include/gamepad
+)
 
 # Export targets
 install(
   EXPORT GamepadTargets
   FILE GamepadConfig.cmake
   NAMESPACE Gamepad::
-  DESTINATION lib/cmake/gamepad
+  DESTINATION lib/cmake/Gamepad
 )
