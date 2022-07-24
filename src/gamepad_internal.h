@@ -153,7 +153,7 @@ struct GamepadState0101
     BYTE  unk8;
     BYTE  unk9;
     BYTE  unk10;
-    BYTE  unk11;
+    BYTE  bExtraButtons;
 };
 
 #pragma pack(pop)
@@ -189,5 +189,11 @@ struct GamepadState0101
 #define EFFECT_INDEX(EFFECT_ID) (EFFECT_ID-FF_EFFECT_MIN)
 
 #elif defined(GAMEPAD_OS_APPLE)
+
+#include <thread>
+#include <set>
+
+#include <Foundation/NSString.h>
+#include <IOKit/hid/IOHIDLib.h>
 
 #endif

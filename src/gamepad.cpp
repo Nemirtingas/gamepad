@@ -15,9 +15,10 @@
  * along with gamepad.  If not, see <https://www.gnu.org/licenses/>
  */
 
-#include "gamepad.h"
+#include <gamepad/gamepad.h>
 #include "gamepad_internal.h"
 #include <mutex>
+#include <vector>
 
 namespace gamepad 
 {
@@ -74,7 +75,9 @@ const gamepad_type_t& get_gamepad_type(gamepad_id_t const& id)
         {{0x045e, 0x02ea}, gamepad_type_t::type_e::XboxOne, "Microsoft X-Box One S pad"},
         {{0x045e, 0x02fd}, gamepad_type_t::type_e::XboxOne, "Microsoft X-Box One S pad (Bluetooth)"},
         {{0x045e, 0x02ff}, gamepad_type_t::type_e::XboxOne, "Microsoft X-Box One Elite pad"},
-        {{0x045e, 0x0b13}, gamepad_type_t::type_e::XboxOne, "Xbox Wireless Controller"},
+        {{0x045e, 0x0b12}, gamepad_type_t::type_e::XboxOne, "Microsoft X-Box One Wireless Controller"},
+        {{0x045e, 0x0b13}, gamepad_type_t::type_e::XboxOne, "Microsoft X-Box One Wireless Controller"},
+        {{0x045e, 0x0b20}, gamepad_type_t::type_e::XboxOne, "Microsoft X-Box One Wireless Controller"},
         {{0x045e, 0x0719}, gamepad_type_t::type_e::Xbox360, "Xbox 360 Wireless Receiver"},
         {{0x046d, 0xc21d}, gamepad_type_t::type_e::Xbox360, "Logitech Gamepad F310"},
         {{0x046d, 0xc21e}, gamepad_type_t::type_e::Xbox360, "Logitech Gamepad F510"},
@@ -395,8 +398,7 @@ static HRESULT DeviceInOutIo(gamepad_context_t* context, DWORD nioctl, void* in_
     return DeviceIo(context, nioctl, in_buff, in_buff_size, out_buff, out_buff_size, nullptr);
 }
 
-template<typename T>
-static int32_t parse_buffer(gamepad_state_t* p_gamepad_state, T &buff)
+static int32_t parse_buffer(gamepad_state_t* p_gamepad_state, GamepadState0100 &buff)
 {
     if (buff.status != 1) // Gamepad is offline
         return gamepad::failed;
@@ -408,22 +410,28 @@ static int32_t parse_buffer(gamepad_state_t* p_gamepad_state, T &buff)
     p_gamepad_state->right_stick.y = rerange_value(-32768.0f, 32767.0f, -1.0f, 1.0f, buff.sThumbRY);
 
     p_gamepad_state->buttons = buff.wButtons;
-    //p_gamepad_state->buttons = 0;
-    //p_gamepad_state->buttons |= (buff.wButtons & XINPUT_GAMEPAD_DPAD_UP       ? button_up             : button_none);
-    //p_gamepad_state->buttons |= (buff.wButtons & XINPUT_GAMEPAD_DPAD_DOWN     ? button_down           : button_none);
-    //p_gamepad_state->buttons |= (buff.wButtons & XINPUT_GAMEPAD_DPAD_LEFT     ? button_left           : button_none);
-    //p_gamepad_state->buttons |= (buff.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT    ? button_right          : button_none);
-    //p_gamepad_state->buttons |= (buff.wButtons & XINPUT_GAMEPAD_START         ? button_start          : button_none);
-    //p_gamepad_state->buttons |= (buff.wButtons & XINPUT_GAMEPAD_BACK          ? button_back           : button_none);
-    //p_gamepad_state->buttons |= (buff.wButtons & XINPUT_GAMEPAD_LEFT_THUMB    ? button_left_thumb     : button_none);
-    //p_gamepad_state->buttons |= (buff.wButtons & XINPUT_GAMEPAD_RIGHT_THUMB   ? button_right_thumb    : button_none);
-    //p_gamepad_state->buttons |= (buff.wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER ? button_left_shoulder  : button_none);
-    //p_gamepad_state->buttons |= (buff.wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER? button_right_shoulder : button_none);
-    //p_gamepad_state->buttons |= (buff.wButtons & XINPUT_GAMEPAD_GUIDE         ? button_guide          : button_none);
-    //p_gamepad_state->buttons |= (buff.wButtons & XINPUT_GAMEPAD_A             ? button_a              : button_none);
-    //p_gamepad_state->buttons |= (buff.wButtons & XINPUT_GAMEPAD_B             ? button_b              : button_none);
-    //p_gamepad_state->buttons |= (buff.wButtons & XINPUT_GAMEPAD_X             ? button_x              : button_none);
-    //p_gamepad_state->buttons |= (buff.wButtons & XINPUT_GAMEPAD_Y             ? button_y              : button_none);
+
+    p_gamepad_state->left_trigger = rerange_value(0.0f, 255.0f, 0.0f, 1.0f, buff.bLeftTrigger);
+    p_gamepad_state->right_trigger = rerange_value(0.0f, 255.0f, 0.0f, 1.0f, buff.bRightTrigger);
+
+    return gamepad::success;
+}
+
+static int32_t parse_buffer(gamepad_state_t* p_gamepad_state, GamepadState0101 &buff)
+{
+    if (buff.status != 1) // Gamepad is offline
+        return gamepad::failed;
+
+    p_gamepad_state->left_stick.x = rerange_value(-32768.0f, 32767.0f, -1.0f, 1.0f, buff.sThumbLX);
+    p_gamepad_state->left_stick.y = rerange_value(-32768.0f, 32767.0f, -1.0f, 1.0f, buff.sThumbLY);
+
+    p_gamepad_state->right_stick.x = rerange_value(-32768.0f, 32767.0f, -1.0f, 1.0f, buff.sThumbRX);
+    p_gamepad_state->right_stick.y = rerange_value(-32768.0f, 32767.0f, -1.0f, 1.0f, buff.sThumbRY);
+
+    p_gamepad_state->buttons = buff.wButtons;
+
+    if (buff.bExtraButtons & 0x01)
+        p_gamepad_state->buttons |= button_share;
 
     p_gamepad_state->left_trigger = rerange_value(0.0f, 255.0f, 0.0f, 1.0f, buff.bLeftTrigger);
     p_gamepad_state->right_trigger = rerange_value(0.0f, 255.0f, 0.0f, 1.0f, buff.bRightTrigger);
@@ -613,7 +621,7 @@ static int32_t internal_update_gamepad_state(gamepad_context_t* p_context)
     memset(&in_buff, 0, sizeof(in_buff));
 
     if (p_context->type == 256)
-    {// I don't know if its xboxOne stuff
+    {
         in_buff.state0100.DeviceIndex = 0;
         inBuffSize = sizeof(in_buff.state0100);
         outBuffSize = sizeof(out_buff.state0100);
@@ -705,6 +713,16 @@ void internal_free_all_contexts()
 
 #elif defined(GAMEPAD_OS_LINUX)
 
+struct axis_t
+{
+    int axis_id;
+    float min;
+    float max;
+    float normalized_min;
+    float normalized_max;
+    float* mapped_value;
+};
+
 struct gamepad_context_t
 {
     int eventFd;
@@ -714,8 +732,7 @@ struct gamepad_context_t
     int8_t dead;
     gamepad_id_t id;
 
-    float axisMin[ABS_MAX];
-    float axisMax[ABS_MAX];
+    std::vector<axis_t> axis;
 
     struct ff_effect rumbleEffect;
     //struct ff_effect effects[NUM_EFFECTS];
@@ -723,12 +740,12 @@ struct gamepad_context_t
     gamepad_state_t gamepadState;
 };
 
-//static void get_available_effects()
+//static void get_available_effects(gamepad_context_t* p_context)
 //{
-//    if (_event_fd != -1)
+//    if (p_context->eventFd != -1)
 //    {
 //        unsigned char ffFeatures[1 + FF_MAX / 8 / sizeof(unsigned char)] = { 0 };
-//        if (ioctl(_event_fd, EVIOCGBIT(EV_FF, sizeof(ffFeatures) * sizeof(unsigned char)), ffFeatures) != -1)
+//        if (ioctl(p_context->eventFd, EVIOCGBIT(EV_FF, sizeof(ffFeatures) * sizeof(unsigned char)), ffFeatures) >= 0)
 //        {
 //        }
 //    }
@@ -747,7 +764,7 @@ static int32_t play_effect(gamepad_context_t* p_context, struct ff_effect* p_eff
 
     if (write(p_context->eventFd, (const void*)&play, sizeof(play)) == -1)
     {
-        //std::cout << "Failed to play effect " << effect_id << std::endl;
+        //std::cout << "Failed to play effect " << p_effect->id << std::endl;
         return gamepad::failed;
     }
 
@@ -799,6 +816,7 @@ static void unregister_effect(gamepad_context_t* p_context, struct ff_effect* p_
 
 static bool is_gamepad(const char* device_path)
 {
+    bool res = false;
     unsigned char evbit[1 + EV_CNT / 8 / sizeof(unsigned char)] = { 0 };
     unsigned char keybit[1 + KEY_CNT / 8 / sizeof(unsigned char)] = { 0 };
     unsigned char absbit[1 + ABS_CNT / 8 / sizeof(unsigned char)] = { 0 };
@@ -813,69 +831,199 @@ static bool is_gamepad(const char* device_path)
     {
         if (testBit(EV_KEY, evbit) &&
             testBit(EV_ABS, evbit) &&
-            testBit(ABS_X, absbit) &&
-            testBit(ABS_Y, absbit) &&
-            testBit(ABS_RX, absbit) &&
-            testBit(ABS_RY, absbit) &&
-            testBit(ABS_Z, absbit) &&
-            testBit(ABS_RZ, absbit) &&
             testBit(ABS_HAT0X, absbit))
         {
-            return true;
+            if (testBit(ABS_X, absbit)  && testBit(ABS_Y, absbit) &&
+                testBit(ABS_RX, absbit) && testBit(ABS_RY, absbit) &&
+                testBit(ABS_Z, absbit)  && testBit(ABS_RZ, absbit))
+            {
+                res = true;
+            }
+            else if (testBit(ABS_X, absbit)   && testBit(ABS_Y, absbit) &&
+                     testBit(ABS_Z, absbit)   && testBit(ABS_RZ, absbit) &&
+                     testBit(ABS_GAS, absbit) && testBit(ABS_BRAKE, absbit))
+            {
+                res = true;
+            }
         }
     }
 
     close(fd);
 
-    return false;
+    return res;
+}
+
+static void get_axis_min_max(gamepad_context_t* p_context, int axis_id, bool invert_min_max, float default_min, float default_max, float& min, float& max)
+{
+    struct input_absinfo absinfo;
+    if (ioctl(p_context->eventFd, EVIOCGABS(axis_id), &absinfo) < 0)
+    {
+        // Failed to retrieve infos, device did not inform the OS of the ranges ?
+        // Set some default values
+        absinfo.minimum = default_min;
+        absinfo.maximum = default_max;
+    }
+
+    if (invert_min_max)
+    {
+        min = absinfo.maximum;
+        max = absinfo.minimum;
+    }
+    else
+    {
+        min = absinfo.minimum;
+        max = absinfo.maximum;
+    }
 }
 
 static int32_t get_gamepad_infos(gamepad_context_t* p_context)
 {
     struct input_id inpid;
+    unsigned char absbit[1 + ABS_CNT / 8 / sizeof(unsigned char)] = { 0 };
+    float axis_min, axis_max;
+
     if (ioctl(p_context->eventFd, EVIOCGID, &inpid) < 0)
+        return gamepad::failed;
+
+    if (ioctl(p_context->eventFd, EVIOCGBIT(EV_ABS, sizeof(absbit)), absbit) < 0)
         return gamepad::failed;
 
     p_context->id.productID = inpid.product;
     p_context->id.vendorID = inpid.vendor;
 
-    struct input_absinfo absinfo;
+    if (testBit(ABS_X, absbit)  && testBit(ABS_Y, absbit) &&
+        testBit(ABS_RX, absbit) && testBit(ABS_RY, absbit) &&
+        testBit(ABS_Z, absbit)  && testBit(ABS_RZ, absbit))
+    {// XUSB ABS_X, ABS_Y, ABS_RX, ABS_RY, ABS_Z, ABS_RZ mode
+        // This mode seems to be used when the gamepad is wired.
+        get_axis_min_max(p_context, ABS_X, false, -32768.0f, 32767.0f, axis_min, axis_max);
+        p_context->axis.emplace_back(axis_t{
+            ABS_X,
+            axis_min,
+            axis_max,
+            -1.0f,
+            1.0f,
+            &p_context->gamepadState.left_stick.x
+        });
 
-    for (auto const& axis : { ABS_X, ABS_Y, ABS_RX, ABS_RY, ABS_Z, ABS_RZ })
+        get_axis_min_max(p_context, ABS_Y, true, -32768.0f, 32767.0f, axis_min, axis_max);
+        p_context->axis.emplace_back(axis_t{
+            ABS_Y,
+            axis_min,
+            axis_max,
+            -1.0f,
+            1.0f,
+            &p_context->gamepadState.left_stick.y
+        });
+
+        get_axis_min_max(p_context, ABS_RX, false, -32768.0f, 32767.0f, axis_min, axis_max);
+        p_context->axis.emplace_back(axis_t{
+            ABS_RX,
+            axis_min,
+            axis_max,
+            -1.0f,
+            1.0f,
+            &p_context->gamepadState.right_stick.x
+        });
+
+        get_axis_min_max(p_context, ABS_RY, true, -32768.0f, 32767.0f, axis_min, axis_max);
+        p_context->axis.emplace_back(axis_t{
+            ABS_RY,
+            axis_min,
+            axis_max,
+            -1.0f,
+            1.0f,
+            &p_context->gamepadState.right_stick.y
+        });
+
+        get_axis_min_max(p_context, ABS_Z, false, 0.0f, 1023.0f, axis_min, axis_max);
+        p_context->axis.emplace_back(axis_t{
+            ABS_Z,
+            axis_min,
+            axis_max,
+            0.0f,
+            1.0f,
+            &p_context->gamepadState.left_trigger
+        });
+
+        get_axis_min_max(p_context, ABS_RZ, false, 0.0f, 1023.0f, axis_min, axis_max);
+        p_context->axis.emplace_back(axis_t{
+            ABS_RZ,
+            axis_min,
+            axis_max,
+            0.0f,
+            1.0f,
+            &p_context->gamepadState.right_trigger
+        });
+    }
+    else if (testBit(ABS_X, absbit)   && testBit(ABS_Y, absbit) &&
+             testBit(ABS_Z, absbit)   && testBit(ABS_RZ, absbit) &&
+             testBit(ABS_GAS, absbit) && testBit(ABS_BRAKE, absbit))
+    {// XUSB ABS_X, ABS_Y, ABS_Z, ABS_RZ, ABS_GAS, ABS_BRAKE mode
+        // This mode seems to be used when the gamepad is wireless.
+        get_axis_min_max(p_context, ABS_X, false, 0.0f, 65535.0f, axis_min, axis_max);
+        p_context->axis.emplace_back(axis_t{
+            ABS_X,
+            axis_min,
+            axis_max,
+            -1.0f,
+            1.0f,
+            &p_context->gamepadState.left_stick.x
+        });
+
+        get_axis_min_max(p_context, ABS_Y, true, 0.0f, 65535.0f, axis_min, axis_max);
+        p_context->axis.emplace_back(axis_t{
+            ABS_Y,
+            axis_min,
+            axis_max,
+            -1.0f,
+            1.0f,
+            &p_context->gamepadState.left_stick.y
+        });
+
+        get_axis_min_max(p_context, ABS_Z, false, 0.0f, 65535.0f, axis_min, axis_max);
+        p_context->axis.emplace_back(axis_t{
+            ABS_Z,
+            axis_min,
+            axis_max,
+            -1.0f,
+            1.0f,
+            &p_context->gamepadState.right_stick.x
+        });
+
+        get_axis_min_max(p_context, ABS_RZ, true, 0.0f, 65535.0f, axis_min, axis_max);
+        p_context->axis.emplace_back(axis_t{
+            ABS_RZ,
+            axis_min,
+            axis_max,
+            -1.0f,
+            1.0f,
+            &p_context->gamepadState.right_stick.y
+        });
+
+        get_axis_min_max(p_context, ABS_BRAKE, false, 0.0f, 1023.0f, axis_min, axis_max);
+        p_context->axis.emplace_back(axis_t{
+            ABS_BRAKE,
+            axis_min,
+            axis_max,
+            0.0f,
+            1.0f,
+            &p_context->gamepadState.left_trigger
+        });
+
+        get_axis_min_max(p_context, ABS_GAS, false, 0.0f, 1023.0f, axis_min, axis_max);
+        p_context->axis.emplace_back(axis_t{
+            ABS_GAS,
+            axis_min,
+            axis_max,
+            0.0f,
+            1.0f,
+            &p_context->gamepadState.right_trigger
+        });
+    }
+    else
     {
-        if (ioctl(p_context->eventFd, EVIOCGABS(axis), &absinfo) >= 0)
-        {
-            if (axis == ABS_Y || axis == ABS_RY)
-            {
-                // On Y, down is positiv, up is negativ, so swap the values
-                auto x = absinfo.minimum;
-                absinfo.minimum = absinfo.maximum;
-                absinfo.maximum = x;
-            }
-
-            p_context->axisMin[axis] = absinfo.minimum;
-            p_context->axisMax[axis] = absinfo.maximum;
-        }
-        else // Failed to retrieve infos, device did not inform the OS of the ranges ?
-        {// Set some common values
-            switch (axis)
-            {
-                case ABS_X: case ABS_RX:
-                    p_context->axisMin[axis] = -32768.0f;
-                    p_context->axisMax[axis] = 32767.0f;
-                    break;
-
-                case ABS_Y: case ABS_RY:
-                    p_context->axisMin[axis] = 32767.0f;
-                    p_context->axisMax[axis] = -32768.0f;
-                    break;
-
-                case ABS_Z: case ABS_RZ:
-                    p_context->axisMin[axis] = 0.0f;
-                    p_context->axisMax[axis] = 255.0f;
-                    break;
-            }
-        }
+        return gamepad::failed;
     }
 
     return gamepad::success;
@@ -901,7 +1049,7 @@ static void close_device(gamepad_context_t* p_context)
 
 static int32_t internal_create_context(gamepad_context_t** pp_context, const char* device_path)
 {
-    *pp_context = (gamepad_context_t*)malloc(sizeof(gamepad_context_t));
+    *pp_context = new gamepad_context_t;
 
     if (*pp_context == nullptr)
         return gamepad::failed;
@@ -953,7 +1101,7 @@ static void internal_free_context(gamepad_context_t** pp_context)
         free((*pp_context)->devicePath);
         (*pp_context)->devicePath = nullptr;
     }
-    free(*pp_context);
+    delete *pp_context;
     *pp_context = nullptr;
 }
 
@@ -961,7 +1109,7 @@ static int32_t internal_get_gamepad(uint32_t index, gamepad_context_t** pp_conte
 {
     DIR* input_dir;
     struct dirent* input_dir_entry;
-    uint32_t device_path_len = 20;
+    uint32_t device_path_len = 32;
     char* device_path;
     uint32_t entry_len;
 
@@ -1044,7 +1192,7 @@ static int32_t internal_get_gamepad(uint32_t index, gamepad_context_t** pp_conte
     return gamepad::failed;
 }
 
-constexpr inline uint32_t set_button_value(uint32_t& buttons, uint32_t value, bool activated)
+static inline void set_button_value(uint32_t& buttons, uint32_t value, bool activated)
 {
     if (activated)
         buttons |= value;
@@ -1070,47 +1218,28 @@ static int32_t internal_update_gamepad_state(gamepad_context_t* p_context)
                 case EV_KEY:
                     switch (event_code)
                     {
-                        case BTN_A     : set_button_value(p_context->gamepadState.buttons, gamepad::button_a             , event_value); break;
-                        case BTN_B     : set_button_value(p_context->gamepadState.buttons, gamepad::button_b             , event_value); break;
-                        case BTN_X     : set_button_value(p_context->gamepadState.buttons, gamepad::button_x             , event_value); break;
-                        case BTN_Y     : set_button_value(p_context->gamepadState.buttons, gamepad::button_y             , event_value); break;
-                        case BTN_TL    : set_button_value(p_context->gamepadState.buttons, gamepad::button_left_shoulder , event_value); break;
-                        case BTN_TR    : set_button_value(p_context->gamepadState.buttons, gamepad::button_right_shoulder, event_value); break;
-                        case BTN_SELECT: set_button_value(p_context->gamepadState.buttons, gamepad::button_back          , event_value); break;
-                        case BTN_START : set_button_value(p_context->gamepadState.buttons, gamepad::button_start         , event_value); break;
-                        case BTN_THUMBL: set_button_value(p_context->gamepadState.buttons, gamepad::button_left_thumb    , event_value); break;
-                        case BTN_THUMBR: set_button_value(p_context->gamepadState.buttons, gamepad::button_right_thumb   , event_value); break;
-                        case BTN_MODE  : set_button_value(p_context->gamepadState.buttons, gamepad::button_guide         , event_value); break;
+                        case BTN_A             : set_button_value(p_context->gamepadState.buttons, gamepad::button_a             , event_value); break;
+                        case BTN_B             : set_button_value(p_context->gamepadState.buttons, gamepad::button_b             , event_value); break;
+                        case BTN_X             : set_button_value(p_context->gamepadState.buttons, gamepad::button_x             , event_value); break;
+                        case BTN_Y             : set_button_value(p_context->gamepadState.buttons, gamepad::button_y             , event_value); break;
+                        case BTN_TL            : set_button_value(p_context->gamepadState.buttons, gamepad::button_left_shoulder , event_value); break;
+                        case BTN_TR            : set_button_value(p_context->gamepadState.buttons, gamepad::button_right_shoulder, event_value); break;
+                        case BTN_SELECT        : set_button_value(p_context->gamepadState.buttons, gamepad::button_back          , event_value); break;
+                        case BTN_START         : set_button_value(p_context->gamepadState.buttons, gamepad::button_start         , event_value); break;
+                        case BTN_THUMBL        : set_button_value(p_context->gamepadState.buttons, gamepad::button_left_thumb    , event_value); break;
+                        case BTN_THUMBR        : set_button_value(p_context->gamepadState.buttons, gamepad::button_right_thumb   , event_value); break;
+                        case BTN_MODE          : set_button_value(p_context->gamepadState.buttons, gamepad::button_guide         , event_value); break;
+                        case KEY_RECORD        : set_button_value(p_context->gamepadState.buttons, gamepad::button_share         , event_value); break;
+                        //case BTN_TRIGGER_HAPPY5: set_button_value(p_context->gamepadState.buttons, gamepad::button_paddle1       , event_value); break;
+                        //case BTN_TRIGGER_HAPPY6: set_button_value(p_context->gamepadState.buttons, gamepad::button_paddle2       , event_value); break;
+                        //case BTN_TRIGGER_HAPPY7: set_button_value(p_context->gamepadState.buttons, gamepad::button_paddle3       , event_value); break;
+                        //case BTN_TRIGGER_HAPPY8: set_button_value(p_context->gamepadState.buttons, gamepad::button_paddle4       , event_value); break;
                     }
                     break;
 
                 case EV_ABS:
                     switch (event_code)
                     {
-                        case ABS_X:
-                            p_context->gamepadState.left_stick.x = rerange_value(p_context->axisMin[event_code], p_context->axisMax[event_code], -1.0f, 1.0f, event_value);
-                            break;
-
-                        case ABS_Y:
-                            p_context->gamepadState.left_stick.y = rerange_value(p_context->axisMin[event_code], p_context->axisMax[event_code], -1.0f, 1.0f, event_value);
-                            break;
-
-                        case ABS_RX:
-                            p_context->gamepadState.right_stick.x = rerange_value(p_context->axisMin[event_code], p_context->axisMax[event_code], -1.0f, 1.0f, event_value);
-                            break;
-
-                        case ABS_RY:
-                            p_context->gamepadState.right_stick.y = rerange_value(p_context->axisMin[event_code], p_context->axisMax[event_code], -1.0f, 1.0f, event_value);
-                            break;
-
-                        case ABS_Z:
-                            p_context->gamepadState.left_trigger = rerange_value(p_context->axisMin[event_code], p_context->axisMax[event_code], 0.0f, 1.0f, event_value);
-                            break;
-
-                        case ABS_RZ:
-                            p_context->gamepadState.right_trigger = rerange_value(p_context->axisMin[event_code], p_context->axisMax[event_code], 0.0f, 1.0f, event_value);
-                            break;
-
                         case ABS_HAT0X:
                             if (event_value == 0)
                             {
@@ -1135,7 +1264,19 @@ static int32_t internal_update_gamepad_state(gamepad_context_t* p_context)
                                 set_button_value(p_context->gamepadState.buttons, gamepad::button_up, event_value < 0);
                                 set_button_value(p_context->gamepadState.buttons, gamepad::button_down, event_value > 0);
                             }
-                        break;
+                            break;
+
+                        default:
+                            for (auto const& axis : p_context->axis)
+                            {
+                                if (axis.axis_id == event_code)
+                                {
+                                    *axis.mapped_value = rerange_value(axis.min, axis.max, axis.normalized_min, axis.normalized_max, event_value);
+                                    break;
+                                }
+                            }
+                            break;
+
                     }
                     break;
             }
@@ -1182,7 +1323,10 @@ static int32_t internal_set_gamepad_vibration(gamepad_context_t* p_context, floa
     p_effect->replay.delay = 0;
 
     if ((res = register_effect(p_context, p_effect)) != gamepad::success)
+    {
+        //std::cout << "register_effect failed." << std::endl;
         return res;
+    }
 
     return play_effect(p_context, p_effect);
 }
@@ -1201,44 +1345,6 @@ void internal_free_all_contexts()
 }
 
 #elif defined(GAMEPAD_OS_APPLE)
-
-struct gamepad_context_t
-{
-};
-
-static int32_t internal_get_gamepad(uint32_t index, gamepad_context_t** pp_context)
-{
-    return gamepad::failed;
-}
-
-static int32_t internal_update_gamepad_state(gamepad_context_t* p_context)
-{
-    return gamepad::failed;
-}
-
-static int32_t internal_get_gamepad_state(gamepad_context_t* p_context, gamepad_state_t* p_gamepad_state)
-{
-    return gamepad::failed;
-}
-
-static int32_t internal_get_gamepad_id(gamepad_context_t* p_context, gamepad_id_t* p_gamepad_id)
-{
-    return gamepad::failed;
-}
-
-static int32_t internal_set_gamepad_vibration(gamepad_context_t* p_context, float left_strength, float right_strength)
-{
-    return gamepad::failed;
-}
-
-static int32_t internal_set_gamepad_led(gamepad_context_t* p_context, uint8_t r, uint8_t g, uint8_t b)
-{
-    return gamepad::failed;
-}
-
-static void internal_free_all_contexts()
-{
-}
 
 #endif
 

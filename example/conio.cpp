@@ -148,7 +148,7 @@ bool textmode(int x, int y)
     return SetConsoleScreenBufferSize(hConsole, coords);
 }
 
-#elif defined(__linux__)
+#elif defined(__linux__) || defined(__APPLE__)
 #include <stdio.h>
 
 void clrscr()
