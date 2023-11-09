@@ -405,6 +405,7 @@ static int32_t get_gamepad_infos(gamepad_context_t* p_context)
             case 9  : button_mode |= 0x0100; break;
             case 10 : button_mode |= 0x0200; break;
             case 548: button_mode |= 0x0400; break;
+            case 178: button_mode |= 0x0800; break;
         }
     }
 
@@ -602,6 +603,99 @@ static int32_t get_gamepad_infos(gamepad_context_t* p_context)
                     p_context->buttons.emplace_back(button_t{
                         button_def.handle, // button_handle
                         gamepad::button_back  // button_value
+                    });
+                    break;
+
+            }
+        }
+    }
+    else if (button_mode == 0x0bff)
+    {
+        for (auto const& button_def : buttons_definitions)
+        {
+            switch(button_def.button_id)
+            {
+                case 1:
+                    p_context->buttons.emplace_back(button_t{
+                        button_def.handle, // button_handle
+                        gamepad::button_a  // button_value
+                    });
+                    break;
+
+                case 2:
+                    p_context->buttons.emplace_back(button_t{
+                        button_def.handle, // button_handle
+                        gamepad::button_b  // button_value
+                    });
+                    break;
+
+                case 4:
+                    p_context->buttons.emplace_back(button_t{
+                        button_def.handle, // button_handle
+                        gamepad::button_x  // button_value
+                    });
+                    break;
+
+                case 5:
+                    p_context->buttons.emplace_back(button_t{
+                        button_def.handle, // button_handle
+                        gamepad::button_y  // button_value
+                    });
+                    break;
+
+                case 7:
+                    p_context->buttons.emplace_back(button_t{
+                        button_def.handle, // button_handle
+                        gamepad::button_left_shoulder  // button_value
+                    });
+                    break;
+
+                case 8:
+                    p_context->buttons.emplace_back(button_t{
+                        button_def.handle, // button_handle
+                        gamepad::button_right_shoulder  // button_value
+                    });
+                    break;
+
+                case 11:
+                    p_context->buttons.emplace_back(button_t{
+                        button_def.handle, // button_handle
+                        gamepad::button_back  // button_value
+                    });
+                    break;
+
+                case 12:
+                    p_context->buttons.emplace_back(button_t{
+                        button_def.handle, // button_handle
+                        gamepad::button_start  // button_value
+                    });
+                    break;
+
+                case 13:
+                    p_context->buttons.emplace_back(button_t{
+                        button_def.handle, // button_handle
+                        gamepad::button_guide  // button_value
+                    });
+                    break;
+
+                case 14:
+                    p_context->buttons.emplace_back(button_t{
+                        button_def.handle, // button_handle
+                        gamepad::button_left_thumb  // button_value
+                    });
+                    break;
+
+                case 15:
+                    p_context->buttons.emplace_back(button_t{
+                        button_def.handle, // button_handle
+                        gamepad::button_right_thumb  // button_value
+                    });
+                    break;
+
+                case 178:
+                    p_context->buttons.emplace_back(button_t{
+                        button_def.handle, // button_handle
+                        gamepad::button_share  // button_value
                     });
                     break;
 
