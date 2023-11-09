@@ -90,7 +90,7 @@ set_target_properties(gamepad_example PROPERTIES
 
 target_link_libraries(gamepad_example
   PRIVATE
-  ${LIBRARY_NAME}
+  gamepad
 )
 
 target_include_directories(gamepad_example
