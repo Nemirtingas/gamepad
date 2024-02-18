@@ -68,7 +68,7 @@ target_include_directories(gamepad
   $<INSTALL_INTERFACE:include>
 )
 
-add_library(Gamepad::Gamepad ALIAS gamepad)
+add_library(Nemirtingas::Gamepad ALIAS gamepad)
 set_target_properties(gamepad PROPERTIES EXPORT_NAME Gamepad)
 
 ##################
@@ -90,7 +90,7 @@ set_target_properties(gamepad_example PROPERTIES
 
 target_link_libraries(gamepad_example
   PRIVATE
-  gamepad
+  Nemirtingas::Gamepad
 )
 
 target_include_directories(gamepad_example
@@ -116,6 +116,6 @@ install(FILES ${GAMEPAD_HEADERS}
 install(
   EXPORT GamepadTargets
   FILE GamepadConfig.cmake
-  NAMESPACE Gamepad::
+  NAMESPACE Nemirtingas::
   DESTINATION lib/cmake/Gamepad
 )
