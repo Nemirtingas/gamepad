@@ -1,6 +1,6 @@
 cmake_policy(SET CMP0091 NEW)
-project(gamepad)
 cmake_minimum_required(VERSION 3.15)
+project(gamepad)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -11,6 +11,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 option(GAMEPAD_BUILD_EXAMPLE "Build gamepad example." OFF)
+option(GAMEPAD_DYNAMIC_RUNTIME "Link against dynamic runtime (Windows)" ON)
 option(BUILD_SHARED_LIBS     "Build gamepad as a shared library" OFF)
 
 if(APPLE)
@@ -42,7 +43,7 @@ add_library(gamepad
 )
 
 set_target_properties(gamepad PROPERTIES
-  MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
+  MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>$<$<BOOL:GAMEPAD_DYNAMIC_RUNTIME>:DLL>"
   POSITION_INDEPENDENT_CODE ON
   C_VISIBILITY_PRESET hidden
   CXX_VISIBILITY_PRESET hidden
@@ -81,7 +82,7 @@ add_executable(gamepad_example
 )
 
 set_target_properties(gamepad_example PROPERTIES
-  MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
+  MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>$<$<BOOL:GAMEPAD_DYNAMIC_RUNTIME>:DLL>"
   POSITION_INDEPENDENT_CODE ON
   C_VISIBILITY_PRESET hidden
   CXX_VISIBILITY_PRESET hidden
